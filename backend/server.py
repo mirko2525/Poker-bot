@@ -62,10 +62,308 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
-# Add your routes to the router instead of directly to app
+# Poker Bot Logic - Mock Implementations
+class MockStateProvider:
+    def __init__(self):
+        self.mock_hands = [
+            {
+                "hero_cards": ["Ah", "Ks"],
+                "board_cards": [],
+                "hero_stack": 100.0,
+                "pot_size": 3.0,
+                "to_call": 2.0,
+                "big_blind": 1.0,
+                "players_in_hand": 3,
+                "phase": "PREFLOP"
+            },
+            {
+                "hero_cards": ["Ah", "Ks"],
+                "board_cards": ["7c", "Td", "2s"],
+                "hero_stack": 98.0,
+                "pot_size": 12.0,
+                "to_call": 5.0,
+                "big_blind": 1.0,
+                "players_in_hand": 3,
+                "phase": "FLOP"
+            },
+            {
+                "hero_cards": ["Qh", "Jd"],
+                "board_cards": ["Kc", "Ts", "9h", "2d"],
+                "hero_stack": 85.0,
+                "pot_size": 24.0,
+                "to_call": 8.0,
+                "big_blind": 1.0,
+                "players_in_hand": 2,
+                "phase": "TURN"
+            },
+            {
+                "hero_cards": ["As", "Ad"],
+                "board_cards": ["Kh", "Qc", "Js", "Tc", "9d"],
+                "hero_stack": 77.0,
+                "pot_size": 45.0,
+                "to_call": 15.0,
+                "big_blind": 1.0,
+                "players_in_hand": 2,
+                "phase": "RIVER"
+            },
+            {
+                "hero_cards": ["2h", "7c"],
+                "board_cards": ["Ac", "Kd", "Qh"],
+                "hero_stack": 45.0,
+                "pot_size": 18.0,
+                "to_call": 12.0,
+                "big_blind": 1.0,
+                "players_in_hand": 3,
+                "phase": "FLOP"
+            },
+            {
+                "hero_cards": ["Jh", "Jc"],
+                "board_cards": [],
+                "hero_stack": 8.5,
+                "pot_size": 4.5,
+                "to_call": 3.5,
+                "big_blind": 1.0,
+                "players_in_hand": 4,
+                "phase": "PREFLOP"
+            }
+        ]
+        self.current_index = 0
+    
+    def get_next_mock_hand(self):
+        if self.current_index >= len(self.mock_hands):
+            return None
+        
+        hand = self.mock_hands[self.current_index]
+        self.current_index += 1
+        return HandState(**hand)
+    
+    def reset_mock_hands(self):
+        self.current_index = 0
+    
+    def has_next(self):
+        return self.current_index < len(self.mock_hands)
+
+class MockEquityEngine:
+    def __init__(self):
+        # Preflop equity table (simplified)
+        self.preflop_equity = {
+            "AA": 85, "KK": 82, "QQ": 80, "JJ": 77, "TT": 75,
+            "AK": 67, "AQ": 65, "AJ": 63, "AT": 60,
+            "KQ": 63, "KJ": 60, "QJ": 58, "JT": 56,
+            "A2": 55, "K2": 50, "Q2": 45, "J2": 42, "T2": 40,
+            "22": 50, "33": 52, "44": 54, "55": 56, "66": 58,
+            "77": 60, "88": 63, "99": 65
+        }
+    
+    def compute_equity(self, hand_state: HandState) -> float:
+        if hand_state.phase == "PREFLOP":
+            return self._compute_preflop_equity(hand_state.hero_cards)
+        else:
+            return self._compute_postflop_equity(hand_state)
+    
+    def _compute_preflop_equity(self, hero_cards: List[str]) -> float:
+        # Extract hand strength key
+        card1_rank = hero_cards[0][0]
+        card2_rank = hero_cards[1][0]
+        
+        # Convert face cards
+        rank_values = {"A": 14, "K": 13, "Q": 12, "J": 11, "T": 10}
+        
+        for rank in [card1_rank, card2_rank]:
+            if rank.isdigit():
+                rank_values[rank] = int(rank)
+        
+        # Determine hand type
+        if card1_rank == card2_rank:
+            # Pocket pair
+            hand_key = card1_rank + card2_rank
+        else:
+            # High card combination
+            high_card = max(card1_rank, card2_rank, key=lambda x: rank_values.get(x, int(x) if x.isdigit() else 0))
+            low_card = min(card1_rank, card2_rank, key=lambda x: rank_values.get(x, int(x) if x.isdigit() else 0))
+            hand_key = high_card + low_card
+        
+        equity = self.preflop_equity.get(hand_key, 45)  # Default equity
+        
+        # Add some randomness to make it more realistic
+        equity += random.uniform(-5, 5)
+        return max(10, min(95, equity))  # Clamp between 10-95%
+    
+    def _compute_postflop_equity(self, hand_state: HandState) -> float:
+        # Simplified postflop equity based on hand strength and draws
+        base_equity = self._compute_preflop_equity(hand_state.hero_cards)
+        
+        # Adjust based on board texture and phase
+        phase_multiplier = {
+            "FLOP": 0.8,
+            "TURN": 0.9,
+            "RIVER": 1.0
+        }
+        
+        equity = base_equity * phase_multiplier[hand_state.phase]
+        
+        # Add board analysis (very simplified)
+        board_cards = hand_state.board_cards
+        hero_ranks = [card[0] for card in hand_state.hero_cards]
+        board_ranks = [card[0] for card in board_cards]
+        
+        # Check for pairs, two pairs, etc. (simplified)
+        hero_on_board = len(set(hero_ranks) & set(board_ranks))
+        if hero_on_board > 0:
+            equity += 15  # Boost for hitting the board
+        
+        # Add randomness
+        equity += random.uniform(-10, 10)
+        return max(5, min(95, equity))
+
+class DecisionEngine:
+    def __init__(self):
+        self.margin = 0.05  # 5%
+        self.strong_equity_threshold = 0.65  # 65%
+        self.allin_stack_bb_threshold = 10  # 10 BB
+    
+    def decide_action(self, hand_state: HandState, equity: float) -> Decision:
+        equity_fraction = equity / 100.0
+        
+        if hand_state.to_call == 0:
+            return self._decide_no_cost_to_call(hand_state, equity, equity_fraction)
+        else:
+            return self._decide_cost_to_call(hand_state, equity, equity_fraction)
+    
+    def _decide_no_cost_to_call(self, hand_state: HandState, equity: float, equity_fraction: float) -> Decision:
+        if equity_fraction < 0.15:
+            return Decision(
+                action="CALL",
+                raise_amount=0.0,
+                reason="Weak hand, but no cost to see next card",
+                equity=equity
+            )
+        elif equity_fraction < 0.5:
+            return Decision(
+                action="CALL",
+                raise_amount=0.0,
+                reason="Decent hand, check to see next card",
+                equity=equity
+            )
+        else:
+            raise_amount = min(hand_state.hero_stack, hand_state.pot_size * 0.5)
+            return Decision(
+                action="RAISE",
+                raise_amount=raise_amount,
+                reason="Strong hand, small raise for value",
+                equity=equity
+            )
+    
+    def _decide_cost_to_call(self, hand_state: HandState, equity: float, equity_fraction: float) -> Decision:
+        pot_odds = hand_state.to_call / (hand_state.pot_size + hand_state.to_call)
+        hero_stack_bb = hand_state.hero_stack / hand_state.big_blind
+        
+        # Check for short stack all-in situation
+        if hero_stack_bb < self.allin_stack_bb_threshold and equity_fraction > 0.55:
+            return Decision(
+                action="RAISE",
+                raise_amount=hand_state.hero_stack,
+                reason=f"Short stack ({hero_stack_bb:.1f} BB) with strong equity - all-in",
+                equity=equity,
+                pot_odds=pot_odds * 100
+            )
+        
+        # Compare equity vs pot odds
+        if equity_fraction < pot_odds - self.margin:
+            return Decision(
+                action="FOLD",
+                raise_amount=0.0,
+                reason=f"Equity ({equity:.1f}%) insufficient vs pot odds ({pot_odds*100:.1f}%)",
+                equity=equity,
+                pot_odds=pot_odds * 100
+            )
+        
+        elif equity_fraction <= pot_odds + self.margin:
+            # Borderline situation
+            if hero_stack_bb > 20:
+                return Decision(
+                    action="CALL",
+                    raise_amount=0.0,
+                    reason=f"Borderline spot with decent stack ({hero_stack_bb:.1f} BB) - call",
+                    equity=equity,
+                    pot_odds=pot_odds * 100
+                )
+            else:
+                return Decision(
+                    action="FOLD",
+                    raise_amount=0.0,
+                    reason=f"Borderline spot with short stack ({hero_stack_bb:.1f} BB) - fold",
+                    equity=equity,
+                    pot_odds=pot_odds * 100
+                )
+        
+        else:
+            # Positive situation
+            if equity_fraction < self.strong_equity_threshold:
+                return Decision(
+                    action="CALL",
+                    raise_amount=0.0,
+                    reason=f"Good equity ({equity:.1f}%) vs pot odds ({pot_odds*100:.1f}%) - call",
+                    equity=equity,
+                    pot_odds=pot_odds * 100
+                )
+            else:
+                raise_amount = min(hand_state.hero_stack, hand_state.pot_size * 0.75)
+                return Decision(
+                    action="RAISE",
+                    raise_amount=raise_amount,
+                    reason=f"Strong equity ({equity:.1f}%) - raise for value",
+                    equity=equity,
+                    pot_odds=pot_odds * 100
+                )
+
+# Initialize the poker bot components
+mock_state_provider = MockStateProvider()
+equity_engine = MockEquityEngine()
+decision_engine = DecisionEngine()
+
+
+# Add poker bot routes
+@api_router.get("/poker/demo/start")
+async def start_demo():
+    """Reset demo and get first hand"""
+    mock_state_provider.reset_mock_hands()
+    return {"message": "Demo started", "total_hands": len(mock_state_provider.mock_hands)}
+
+@api_router.get("/poker/demo/next", response_model=DemoResponse)
+async def get_next_hand():
+    """Get next demo hand with analysis"""
+    hand_state = mock_state_provider.get_next_mock_hand()
+    
+    if hand_state is None:
+        raise HTTPException(status_code=404, detail="No more demo hands available")
+    
+    # Compute equity
+    equity = equity_engine.compute_equity(hand_state)
+    
+    # Make decision
+    decision = decision_engine.decide_action(hand_state, equity)
+    
+    return DemoResponse(
+        hand_number=mock_state_provider.current_index,
+        hand_state=hand_state,
+        decision=decision,
+        has_next=mock_state_provider.has_next()
+    )
+
+@api_router.get("/poker/demo/status")
+async def get_demo_status():
+    """Get current demo status"""
+    return {
+        "current_hand": mock_state_provider.current_index,
+        "total_hands": len(mock_state_provider.mock_hands),
+        "has_next": mock_state_provider.has_next()
+    }
+
+# Original routes
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Poker Bot Demo API - Ready"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
