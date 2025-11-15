@@ -27,7 +27,31 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
+# Define Models for Poker Bot
+class HandState(BaseModel):
+    hero_cards: List[str] = Field(..., description="Player's hole cards")
+    board_cards: List[str] = Field(..., description="Community cards on board")
+    hero_stack: float = Field(..., description="Player's current stack")
+    pot_size: float = Field(..., description="Current pot size")
+    to_call: float = Field(..., description="Amount to call")
+    big_blind: float = Field(..., description="Big blind value")
+    players_in_hand: int = Field(..., description="Number of active players")
+    phase: str = Field(..., description="Hand phase: PREFLOP, FLOP, TURN, RIVER")
+
+class Decision(BaseModel):
+    action: str = Field(..., description="FOLD, CALL, or RAISE")
+    raise_amount: float = Field(default=0.0, description="Amount to raise if action is RAISE")
+    reason: Optional[str] = Field(default=None, description="Reason for the decision")
+    equity: float = Field(..., description="Calculated equity percentage")
+    pot_odds: Optional[float] = Field(default=None, description="Pot odds percentage")
+
+class DemoResponse(BaseModel):
+    hand_number: int
+    hand_state: HandState
+    decision: Decision
+    has_next: bool
+
+# Original Models
 class StatusCheck(BaseModel):
     model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
     
