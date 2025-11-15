@@ -8,7 +8,7 @@ import HandDisplay from './components/HandDisplay';
 import GameStats from './components/GameStats';
 import ActionDecision from './components/ActionDecision';
 import { toast } from 'sonner';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from './components/ui/sonner';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
