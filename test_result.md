@@ -208,7 +208,9 @@ test_plan:
     - "Hand Analysis and Next Hand Flow"
     - "UI Components Rendering"
     - "Demo Completion Flow"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Hand Analysis and Next Hand Flow"
+    - "UI Components Rendering"
   test_all: true
   test_priority: "sequential"
 
