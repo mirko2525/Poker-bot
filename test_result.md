@@ -183,15 +183,18 @@ frontend:
 backend:
   - task: "Poker Bot API Endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "testing"
           comment: "Need to verify /api/poker/demo/start, /api/poker/demo/next, and /api/poker/demo/status endpoints work correctly with mock data"
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED: All API endpoints working correctly. /api/poker/demo/start returns 200 OK, /api/poker/demo/next returns proper hand data with hand_state (hero_cards, board_cards, pot_size, etc.) and decision (action, equity, reason). Mock data includes 6 different poker scenarios with equity calculations 10-95% as expected."
 
 metadata:
   created_by: "testing_agent"
