@@ -1,6 +1,6 @@
 import React from 'react';
 import PokerCard from './PokerCard';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from './ui/card';
 
 const HandDisplay = ({ handState, className = "" }) => {
   if (!handState) return null;
