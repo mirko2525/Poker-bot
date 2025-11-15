@@ -170,12 +170,15 @@ frontend:
     working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
-    priority: "high"
+    priority: "medium"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "testing"
           comment: "Need to test demo completion after all hands, verify 'Demo Complete' message appears and 'Restart Demo' button works"
+        - working: "NA"
+          agent: "testing"
+          comment: "CANNOT TEST: Demo completion flow cannot be tested because hand analysis components are not rendering. Need to fix React component rendering issue first."
 
 backend:
   - task: "Poker Bot API Endpoints"
