@@ -78,7 +78,7 @@ def test_alignment():
             if hand_match and decision_match:
                 print(f"✅ ALLINEATO: {console_hand.phase} {' '.join(console_hand.hero_cards)} → {console_decision.action}")
             else:
-                print(f"❌ DISALLINEATO:")
+                print("❌ DISALLINEATO:")
                 if not hand_match:
                     print(f"   Hand State: Console={console_hand.hero_cards} vs Web={web_hand['hero_cards']}")
                 if not decision_match:
