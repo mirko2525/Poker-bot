@@ -205,10 +205,11 @@ def recognize_card_ranksuit(
         total_pixels = card_arr.size
         white_ratio = white_pixels / total_pixels
         
-        # Real cards have >20% white pixels (sfondo bianco della carta)
+        # Real cards have >8% white pixels (sfondo bianco della carta)
         # Green table has <5% white pixels (solo riflessi/ombre)
-        if white_ratio < 0.15:
-            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.15)")
+        # Threshold abbassato per carte con bordi/ombre
+        if white_ratio < 0.08:
+            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.08)")
             return None, 0.0
         
         # Extract regions from NORMALIZED card
