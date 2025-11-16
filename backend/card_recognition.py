@@ -293,7 +293,7 @@ def test_card_recognition_on_regions(output_regions_dir: str,
     
     # Statistics
     stats = get_recognition_stats(results)
-    print(f"\n📊 Statistics:")
+    print("\n📊 Statistics:")
     print(f"   Recognition rate: {stats['recognition_rate']:.1%}")
     print(f"   Average confidence: {stats['average_confidence']:.3f}")
     
