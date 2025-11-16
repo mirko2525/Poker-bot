@@ -172,8 +172,10 @@ def recognize_card_ranksuit(
     """
     Riconosce una carta usando matching separato di rank e suit.
     
+    UNIFIED PIPELINE: card_image passa da normalize_card_image() PRIMA di tutto.
+    
     Args:
-        card_image: PIL Image della carta completa
+        card_image: PIL Image della carta completa (RAW, con verde o altro)
         rank_templates: Dict dei template rank
         suit_templates: Dict dei template suit
     
@@ -187,22 +189,27 @@ def recognize_card_ranksuit(
         return None, 0.0
     
     try:
+        # STEP 1: NORMALIZE with single source of truth
+        # Same transformation used for template generation
+        normalized_card = normalize_card_image(card_image)
+        
         # Check for empty card position (dark/uniform)
-        card_gray = ImageOps.grayscale(card_image)
-        card_arr = np.array(card_gray, dtype=np.float32)
+        card_arr = np.array(normalized_card, dtype=np.float32)
         mean_brightness = card_arr.mean()
         brightness_std = card_arr.std()
         
-        # Empty position detection
-        if mean_brightness < 55 and brightness_std < 15:
-            logger.debug(f"Empty position detected: brightness={mean_brightness:.1f}")
+        # Empty position detection (adjusted for green tables)
+        # Cards with green background have brightness ~40-50
+        # Empty positions are very uniform (low std)
+        if brightness_std < 5:
+            logger.debug(f"Empty position detected: brightness={mean_brightness:.1f}, std={brightness_std:.1f}")
             return None, 0.0
         
-        # Extract regions
-        rank_region = extract_rank_region(card_image)
-        suit_region = extract_suit_region(card_image)
+        # Extract regions from NORMALIZED card
+        rank_region = extract_rank_region(normalized_card)
+        suit_region = extract_suit_region(normalized_card)
         
-        # Normalize
+        # Convert to arrays for matching
         rank_arr = normalize_region(rank_region)
         suit_arr = normalize_region(suit_region)
         
