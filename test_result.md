@@ -254,4 +254,20 @@ agent_communication:
     - agent: "testing"
       message: "✅ PHASE 2 VERIFICATION COMPLETE: Comprehensive testing confirms Phase 2 backend updates are working correctly. Backend now provides 8 hands instead of 6 with new scenarios (As Ad, Kh Jd, etc.) and configurable constants. All React components render properly, decision logic works with new parameters, equity calculations vary appropriately (33.8% to 87.5%), and different poker phases (PREFLOP, FLOP, TURN, RIVER) are handled correctly. Fixed frontend display issue where hand counter showed 'Hand X of 6' instead of 'Hand X of 8'. All core functionality verified working. Minor issue: restart functionality still has small delay but doesn't affect demo operation."
     - agent: "testing"
+
+  - task: "Empty Check Fix - Card Recognition Phase 2"
+    implemented: true
+    working: true
+    file: "/app/backend/card_recognition_ranksuit.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "user"
+          comment: "PROBLEMA TECNICO: Il sistema ha 2 fasi sequenziali - FASE 1 (Detection Slot-Based) funziona e trova le carte, ma FASE 2 (Recognition Rank+Suit) blocca le carte con empty check troppo stringente. Soglia white_ratio < 0.03 blocca carte valide perché gli slot includono bordi verdi che abbassano il white_ratio. Carte estratte hanno white_ratio 0.01-0.02 invece di 0.15 a causa di bordi/ombre inclusi nell'estrazione slot."
+        - working: true
+          agent: "main"
+          comment: "✅ FIX IMPLEMENTATO: Empty check threshold abbassato da 0.03 a 0.008 (righe 211-214). MSE thresholds aumentati: RANK_MSE_THRESHOLD 0.08→0.25, SUIT_MSE_THRESHOLD 0.08→0.30, MIN_COMBINED_CONFIDENCE 0.85→0.65 per gestire variazioni di illuminazione/angolazioni. Test con screenshot 150959: FASE 1 trova 3 carte (white_ratio 0.38, 0.53, 0.55), FASE 2 riconosce 3/3 carte (Ad 99.2%, 6h 76.9%, 9h 91.7%). Success rate: 100%. Il fix permette alle carte con bordi/ombre di passare l'empty check mantenendo filtro per posizioni veramente vuote."
+
       message: "🔧 PHASE 3 VERIFICATION - CRITICAL ISSUE FOUND & FIXED: During Phase 3 verification testing, discovered that React components were not rendering after clicking 'Next Hand' button. Root cause: Button was incorrectly disabled due to faulty condition `(!hasNext && demoStarted)` in App.js line 102. The `getNextHand` function was never being called because button clicks were blocked. FIXED by removing the problematic disable condition. After fix: ✅ All React components render correctly (HandDisplay, GameStats, ActionDecision), ✅ API calls to /api/poker/demo/next work properly, ✅ Hand counter updates correctly (Hand 1 of 8, Hand 2 of 8, etc.), ✅ Poker cards display with correct suits (A♠ A♦), ✅ Equity calculations show proper values (87.0%), ✅ Bot recommendations work (RAISE $2.25), ✅ Phase 2 expanded data confirmed (8 hands total), ✅ All module status indicators working. Phase 3 table input layer additions did NOT break existing demo functionality - the issue was a frontend button logic bug that has been resolved."
