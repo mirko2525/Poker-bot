@@ -189,6 +189,11 @@ class MockEquityEngine:
         }
     
     def compute_equity(self, hand_state: HandState) -> float:
+        # Check if hero cards are unknown/unrecognized
+        if not hand_state.hero_cards or any('?' in card for card in hand_state.hero_cards):
+            # Return default equity for unknown hands (in decimal 0-1 range)
+            return 0.50  # 50% default equity
+        
         if hand_state.phase == "PREFLOP":
             return self._compute_preflop_equity(hand_state.hero_cards)
         else:
