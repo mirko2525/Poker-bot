@@ -60,7 +60,7 @@ def test_screenshot_recognition(screenshot_path: str):
     for i, card_img in enumerate(cards):
         logger.info(f"\n🃏 Carta {i+1}/{len(cards)}:")
         
-        result = recognize_card_rank_suit(card_img)
+        result = recognize_card_ranksuit(card_img)
         
         if result:
             card_str, confidence = result
