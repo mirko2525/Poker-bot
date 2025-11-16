@@ -278,8 +278,14 @@ class MockEquityEngine:
             # One hero card on board (pair)
             equity_pct = min(90, equity_pct + 8)
         elif hero_on_board == 0:
-            # No pair - reduce equity slightly
-            equity_pct = max(10, equity_pct - 10)
+            # No pair - reduce equity significantly for weak hands
+            # Strong pocket pairs maintain better equity even without hitting
+            if equity_pct >= 75:  # Premium pairs (TT+)
+                equity_pct = max(60, equity_pct - 10)
+            elif equity_pct >= 60:  # Medium pairs/hands
+                equity_pct = max(40, equity_pct - 15)
+            else:  # Weak hands
+                equity_pct = max(5, equity_pct - 25)
         
         # Adjust for phase (equity typically decreases as unknowns decrease)
         # But for strong hands, equity often holds or increases
