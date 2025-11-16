@@ -69,6 +69,13 @@ def test_screenshot_recognition(screenshot_path: str):
     logger.info(f"🔍 FASE 2: RECOGNITION (Rank+Suit Matching)")
     logger.info(f"{'─'*80}\n")
     
+    # Salva carte estratte per debug
+    debug_dir = Path("/app/backend/debug_extracted")
+    debug_dir.mkdir(exist_ok=True)
+    for i, card_img in enumerate(cards):
+        card_img.save(debug_dir / f"card_{i+1}.png")
+    logger.info(f"💾 Carte estratte salvate in: {debug_dir}/\n")
+    
     recognized_cards = []
     for i, card_img in enumerate(cards):
         logger.info(f"\n🃏 Carta {i+1}/{len(cards)}:")
