@@ -7,8 +7,14 @@ Ordini del Capo - Fase 5: Sistema integrato end-to-end per consigliare azioni po
 basandosi su screenshot reali.
 """
 
+import sys
 from pathlib import Path
 import logging
+
+# Aggiungi backend directory al path per garantire che i moduli siano trovati
+backend_dir = Path(__file__).resolve().parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
 # Import moduli esistenti
 from vision_to_handstate import VisionPokerEngine
