@@ -87,4 +87,23 @@ def test_alignment():
             
         except Exception as e:
             print(f"❌ Errore API: {e}")
-            mismatches += 1\n    \n    print()\n    print(\"=\"*60)\n    print(\"RISULTATI TEST ALLINEAMENTO\")\n    print(\"=\"*60)\n    \n    if mismatches == 0:\n        print(f\"🎉 SUCCESSO COMPLETO: Tutti i {total_hands} confronti sono allineati!\")\n        print(\"📋 Console Demo e Web Demo usano esattamente la stessa logica backend.\")\n        print(\"✅ Fase 2 - Requisito Allineamento: SUPERATO\")\n    else:\n        print(f\"⚠️  ATTENZIONE: {mismatches}/{total_hands} mani disallineate\")\n        print(\"🔧 Richiedono revisione della sincronizzazione logica.\")\n    \n    print()\n\n\nif __name__ == \"__main__\":\n    test_alignment()"
+            mismatches += 1
+    
+    print()
+    print("="*60)
+    print("RISULTATI TEST ALLINEAMENTO")
+    print("="*60)
+    
+    if mismatches == 0:
+        print(f"🎉 SUCCESSO COMPLETO: Tutti i {total_hands} confronti sono allineati!")
+        print("📋 Console Demo e Web Demo usano esattamente la stessa logica backend.")
+        print("✅ Fase 2 - Requisito Allineamento: SUPERATO")
+    else:
+        print(f"⚠️  ATTENZIONE: {mismatches}/{total_hands} mani disallineate")
+        print("🔧 Richiedono revisione della sincronizzazione logica.")
+    
+    print()
+
+
+if __name__ == "__main__":
+    test_alignment()"
