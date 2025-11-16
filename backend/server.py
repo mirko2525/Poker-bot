@@ -218,8 +218,9 @@ class MockEquityEngine:
         
         equity = self.preflop_equity.get(hand_key, 45)  # Default equity
         
-        # Add some randomness to make it more realistic
-        equity += random.uniform(-5, 5)
+        # Add randomness only if enabled (Ordini Fase 2)
+        if self.enable_random:
+            equity += random.uniform(-5, 5)
         return max(10, min(95, equity))  # Clamp between 10-95%
     
     def _compute_postflop_equity(self, hand_state: HandState) -> float:
