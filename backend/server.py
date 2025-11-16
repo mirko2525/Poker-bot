@@ -327,7 +327,7 @@ class DecisionEngine:
         
         elif equity_fraction <= pot_odds + self.margin:
             # Borderline situation
-            if hero_stack_bb > 20:
+            if hero_stack_bb > self.short_stack_borderline_bb:
                 return Decision(
                     action="CALL",
                     raise_amount=0.0,
