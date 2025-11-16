@@ -89,4 +89,28 @@ def create_mock_pokerstars_screenshot():
     for px, py, pname in positions:
         if pname != 'Player4':  # Player4 is the hero position
             draw.rectangle([px-50, py-20, px+50, py+20], fill='#666666', outline='white', width=1)
-            draw.text((px, py), pname, fill='white', anchor='mm')\n    \n    return screenshot\n\n\ndef main():\n    \"\"\"Create and save mock screenshot.\"\"\"\n    print(\"Creating mock PokerStars screenshot for testing...\")\n    \n    # Create screenshots directory if it doesn't exist\n    screenshots_dir = Path('screenshots')\n    screenshots_dir.mkdir(exist_ok=True)\n    \n    # Create mock screenshot\n    mock_screenshot = create_mock_pokerstars_screenshot()\n    \n    # Save it\n    output_path = screenshots_dir / 'mock_pokerstars_table.png'\n    mock_screenshot.save(output_path)\n    \n    print(f\"✅ Mock screenshot created: {output_path}\")\n    print(f\"   Dimensions: {mock_screenshot.width}x{mock_screenshot.height}\")\n    print(\"   Content: A♠ K♥ vs 7♣ T♦ 2♠, Pot: $24.50, Stack: $87.25\")\n    print()\n    print(\"You can now run: python analyze_screenshot.py\")\n\n\nif __name__ == \"__main__\":\n    main()\n"
+            draw.text((px, py), pname, fill='white', anchor='mm')
+    
+    return screenshot
+
+
+def main():
+    """Create and save mock screenshot."""
+    print("Creating mock PokerStars screenshot for testing...")
+    
+    # Create screenshots directory if it doesn't exist
+    screenshots_dir = Path('screenshots')
+    screenshots_dir.mkdir(exist_ok=True)
+    
+    # Create mock screenshot
+    mock_screenshot = create_mock_pokerstars_screenshot()
+    
+    # Save it
+    output_path = screenshots_dir / 'mock_pokerstars_table.png'
+    mock_screenshot.save(output_path)
+    
+    print(f"✅ Mock screenshot created: {output_path}")
+    print(f"   Dimensions: {mock_screenshot.width}x{mock_screenshot.height}")
+    print("   Content: A♠ K♥ vs 7♣ T♦ 2♠, Pot: $24.50, Stack: $87.25")
+    print()
+    print("You can now run: python analyze_screenshot.py")\n\n\nif __name__ == \"__main__\":\n    main()\n"
