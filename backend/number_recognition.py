@@ -266,9 +266,9 @@ def parse_number_string(raw_string: str) -> Optional[float]:
         
         # Try to parse as float
         # Handle cases like "12.50", "5", ".67", etc.
-        if re.match(r'^\\d*\\.?\\d+$', cleaned):
+        if re.match(r'^\d*\.?\d+$', cleaned):
             return float(cleaned)
-        elif re.match(r'^\\.\\d+$', cleaned):  # .67
+        elif re.match(r'^\.\d+$', cleaned):  # .67
             return float(cleaned)
         else:
             logger.debug(f"Could not parse number string: '{cleaned}'")
