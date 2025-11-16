@@ -102,14 +102,14 @@ def recognize_card(card_image: Image.Image,
         return None, 0.0
     
     try:
-        # Check if card position is empty (mostly uniform bright or dark)
+        # Check if card position is empty (mostly uniform)
         card_array_check = np.array(card_image.convert('L'), dtype=np.float32)
         mean_brightness = card_array_check.mean()
         brightness_std = card_array_check.std()
         
-        # If mostly bright (>200) or dark (<50) with low variance (<80), it's likely empty
-        if (mean_brightness > 200 and brightness_std < 80) or (mean_brightness < 50 and brightness_std < 80):
-            logger.debug(f"Empty card position detected (brightness={mean_brightness:.1f}, std={brightness_std:.1f})")
+        # If very dark with low variance, it's likely an empty position
+        if mean_brightness < 55 and brightness_std < 15:
+            logger.debug(f"Empty card position detected (dark): brightness={mean_brightness:.1f}, std={brightness_std:.1f}")
             return None, 0.0
         
         # Normalize the input card
