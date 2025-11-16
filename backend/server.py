@@ -325,7 +325,18 @@ class DecisionEngine:
         self.raise_no_cost_multiplier = RAISE_NO_COST_MULTIPLIER
     
     def decide_action(self, hand_state: HandState, equity: float) -> Decision:
-        equity_fraction = equity / 100.0
+        """
+        Decide poker action based on hand state and equity.
+        
+        Args:
+            hand_state: Current hand state
+            equity: Equity as decimal (0-1 range, NOT percentage)
+        
+        Returns:
+            Decision object with action, raise_amount, and reason
+        """
+        # equity is already in decimal format (0-1), no need to divide by 100
+        equity_fraction = equity
         
         if hand_state.to_call == 0:
             return self._decide_no_cost_to_call(hand_state, equity, equity_fraction)
