@@ -178,15 +178,36 @@ def recognize_cards(card_images: List[Image.Image],
 
 def filter_recognized_cards(recognition_results: List[Tuple[Optional[str], float]]) -> List[str]:
     """
-    Filter recognition results to return only successfully recognized cards.
+    Filter and return only successfully recognized cards.
+    Removes duplicates with lower confidence (keeps first occurrence).
     
     Args:
-        recognition_results: List of (card_code or None, confidence) tuples
+        recognition_results: List of (card_code, confidence) tuples
         
     Returns:
-        List of recognized card codes (filtering out None values)
+        List of card codes (excludes None/unrecognized cards and suspicious duplicates)
     """
-    return [card_code for card_code, confidence in recognition_results if card_code is not None]
+    recognized = []
+    seen_cards = {}
+    
+    for idx, (card_code, confidence) in enumerate(recognition_results):
+        if card_code is not None:
+            # If we've seen this card before, keep the one with higher confidence
+            if card_code in seen_cards:
+                prev_idx, prev_conf = seen_cards[card_code]
+                if confidence > prev_conf:
+                    # Replace previous occurrence with this one
+                    recognized[recognized.index(card_code)] = None  # Mark for removal
+                    recognized.append(card_code)
+                    seen_cards[card_code] = (idx, confidence)
+                    logger.warning(f"Duplicate card {card_code} detected - keeping higher confidence match")
+                # else: ignore this duplicate, keep the previous one
+            else:
+                recognized.append(card_code)
+                seen_cards[card_code] = (idx, confidence)
+    
+    # Remove None markers
+    return [card for card in recognized if card is not None]
 
 
 def get_recognition_stats(recognition_results: List[Tuple[Optional[str], float]]) -> Dict:
