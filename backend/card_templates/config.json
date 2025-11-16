@@ -4,12 +4,15 @@
       "width": 64,
       "height": 96
     },
-    "total_cards": 4,
+    "total_cards": 7,
     "available_templates": [
       "2c",
       "6d",
       "Ah",
-      "Ac"
+      "Ac",
+      "4d",
+      "8c",
+      "4h"
     ],
     "missing_cards": [
       "Ad",
@@ -21,8 +24,6 @@
       "3d",
       "3c",
       "3s",
-      "4h",
-      "4d",
       "4c",
       "4s",
       "5h",
@@ -38,7 +39,6 @@
       "7s",
       "8h",
       "8d",
-      "8c",
       "8s",
       "9h",
       "9d",
