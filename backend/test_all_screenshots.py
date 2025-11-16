@@ -85,6 +85,7 @@ def test_all_pokerstars_screenshots():
         print("   - PREFLOP: Estrazioni completate")
         print("   - FLOP: Estrazioni completate") 
         print("   - TURN: Estrazioni completate")
+        print("   - RIVER: Estrazioni completate")
         print()
         print("🎯 FASE 3 - Real Screenshot Integration: COMPLETA!")
         return True
