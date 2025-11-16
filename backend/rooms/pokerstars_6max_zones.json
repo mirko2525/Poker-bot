@@ -4,18 +4,18 @@
   
   "zones": {
     "board_row": {
-      "comment": "Zona ampia contenente tutte le 5 carte board (da sinistra a destra)",
-      "x": 1050,
-      "y": 750,
-      "width": 700,
-      "height": 200
+      "comment": "Zona CALIBRATA con selezione Capo - contiene tutte le 5 carte board",
+      "x": 985,
+      "y": 793,
+      "width": 1084,
+      "height": 380
     },
     "hero_row": {
-      "comment": "Zona contenente le 2 carte hero",
+      "comment": "Zona contenente le 2 carte hero (da calibrare)",
       "x": 1200,
-      "y": 1150,
-      "width": 350,
-      "height": 200
+      "y": 1400,
+      "width": 400,
+      "height": 250
     }
   },
   
