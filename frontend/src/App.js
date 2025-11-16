@@ -94,7 +94,7 @@ const PokerBotDemo = () => {
             <div className="flex items-center gap-4">
               {demoStarted && (
                 <Badge variant="secondary" className="px-3 py-1">
-                  Hand {handNumber} of 6
+                  Hand {handNumber} of 8
                 </Badge>
               )}
               <Button 
