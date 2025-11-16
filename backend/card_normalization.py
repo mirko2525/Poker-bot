@@ -21,7 +21,7 @@ CARD_TEMPLATE_HEIGHT = 118
 def normalize_card_image(card_image: Image.Image,
                         target_width: int = CARD_TEMPLATE_WIDTH,
                         target_height: int = CARD_TEMPLATE_HEIGHT,
-                        use_autocontrast: bool = False) -> Image.Image:
+                        use_autocontrast: bool = True) -> Image.Image:
     """
     Normalizza una carta per template generation o recognition.
     
