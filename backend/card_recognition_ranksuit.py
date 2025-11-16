@@ -34,13 +34,14 @@ RANK_Y = 0
 RANK_WIDTH = int(CARD_WIDTH * 0.35)  # ~31px
 RANK_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~29px
 
-# Suit region coordinates (CALIBRATED - Fase 6 fix v3)
-# Using 0.15-0.40 to minimize rank overlap and capture suit symbol
+# Suit region coordinates (CALIBRATED - Fase 6 fix v4)
+# Using 0.10-0.45 (larger region) to capture different card layouts
+# Some suits are higher (10-30%), others lower (25-45%)
 SUIT_X = 0
-SUIT_Y = int(CARD_HEIGHT * 0.15)  # 18px
-SUIT_Y_END = int(CARD_HEIGHT * 0.40)  # 47px
+SUIT_Y = int(CARD_HEIGHT * 0.10)  # 12px
+SUIT_Y_END = int(CARD_HEIGHT * 0.45)  # 53px
 SUIT_WIDTH = int(CARD_WIDTH * 0.35)  # 31px
-SUIT_HEIGHT = SUIT_Y_END - SUIT_Y  # 29px
+SUIT_HEIGHT = SUIT_Y_END - SUIT_Y  # 41px
 
 
 def load_rank_templates(ranks_dir: str = "card_templates/ranks") -> Dict[str, np.ndarray]:
