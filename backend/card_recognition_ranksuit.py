@@ -39,20 +39,26 @@ MIN_COMBINED_CONFIDENCE = 0.50  # Molto abbassato
 CARD_WIDTH = 89
 CARD_HEIGHT = 118
 
+# ORDINE CAPO: Template dimensions from real files
+# Ranks: 35x35px
+# Suits: 35x53px
+RANK_TEMPLATE_WIDTH = 35
+RANK_TEMPLATE_HEIGHT = 35
+SUIT_TEMPLATE_WIDTH = 35
+SUIT_TEMPLATE_HEIGHT = 53
+
 # Rank region coordinates (top-left corner, upper portion)
 RANK_X = 0
 RANK_Y = 0
-RANK_WIDTH = int(CARD_WIDTH * 0.35)  # ~31px
-RANK_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~29px
+RANK_WIDTH = RANK_TEMPLATE_WIDTH   # 35px
+RANK_HEIGHT = RANK_TEMPLATE_HEIGHT  # 35px
 
-# Suit region coordinates (CALIBRATED - Fase 6 fix v4)
-# Using 0.10-0.45 (larger region) to capture different card layouts
-# Some suits are higher (10-30%), others lower (25-45%)
+# Suit region coordinates (below rank)
 SUIT_X = 0
-SUIT_Y = int(CARD_HEIGHT * 0.10)  # 12px
-SUIT_Y_END = int(CARD_HEIGHT * 0.45)  # 53px
-SUIT_WIDTH = int(CARD_WIDTH * 0.35)  # 31px
-SUIT_HEIGHT = SUIT_Y_END - SUIT_Y  # 41px
+SUIT_Y = int(CARD_HEIGHT * 0.10)    # 12px
+SUIT_Y_END = SUIT_Y + SUIT_TEMPLATE_HEIGHT  # 12 + 53 = 65px
+SUIT_WIDTH = SUIT_TEMPLATE_WIDTH     # 35px
+SUIT_HEIGHT = SUIT_TEMPLATE_HEIGHT   # 53px
 
 
 def load_rank_templates(ranks_dir: str = "card_templates/ranks") -> Dict[str, np.ndarray]:
