@@ -8,12 +8,10 @@ Template per 0-9, punto decimale, virgola, simbolo euro.
 Ordini del Capo - Fase 4: Template-based digit recognition per numeri poker.
 """
 
-import os
-import json
 from pathlib import Path
-from PIL import Image, ImageOps, ImageFilter
+from PIL import Image, ImageOps
 import numpy as np
-from typing import Dict, Optional, List, Tuple
+from typing import Dict
 import logging
 
 # Configure logging
