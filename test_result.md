@@ -152,6 +152,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ RESOLVED: React component rendering issue has been fixed! 'Next Hand' button works correctly, API calls return 200 OK, and all React components (HandDisplay, GameStats, ActionDecision) now render properly. Successfully tested cycling through all 6 hands with proper hand counter updates (Hand 1-6 of 6). Poker cards display correctly with suits (♥♦♣♠), equity calculations show varying percentages (70.4%, 66.0%), and action buttons (RAISE) appear with proper styling and raise amounts ($2.25)."
+        - working: true
+          agent: "testing"
+          comment: "✅ PHASE 2 VERIFIED: Comprehensive testing confirms expanded mock data is working correctly. Backend now provides 8 hands instead of 6 with new scenarios including As Ad (87.5% equity), Kh Jd (63.1% equity), flush draws, straight completions, and short stack situations. All poker phases (PREFLOP, FLOP, TURN, RIVER) tested successfully. Decision logic with configurable constants working properly. Fixed frontend display to show 'Hand X of 8' instead of 'Hand X of 6'. All React components render correctly with varying equity calculations (33.8% to 87.5%) and appropriate action recommendations (CALL, RAISE with amounts)."
 
   - task: "UI Components Rendering"
     implemented: true
