@@ -28,9 +28,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Recognition thresholds (da Capo)
-RANK_MSE_THRESHOLD = 0.08
-SUIT_MSE_THRESHOLD = 0.08
-MIN_COMBINED_CONFIDENCE = 0.85
+# Soglie ABBASSATE per gestire carte con bordi/ombre/angolazioni diverse
+RANK_MSE_THRESHOLD = 0.20  # Era 0.08 - Carta 2 aveva 0.1883
+SUIT_MSE_THRESHOLD = 0.20  # Era 0.08 - Carta 3 aveva 0.1669
+MIN_COMBINED_CONFIDENCE = 0.70  # Era 0.85 - Abbassato per match meno perfetti
 
 # Card dimensions (from our config)
 CARD_WIDTH = 89
