@@ -28,10 +28,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Recognition thresholds (da Capo)
-# Soglie OTTIMIZZATE per nuovi template da stesso source
-RANK_MSE_THRESHOLD = 0.45  # Aumentato per gestire variazioni layout/font
-SUIT_MSE_THRESHOLD = 0.45  # Aumentato per gestire variazioni rendering
-MIN_COMBINED_CONFIDENCE = 0.60  # Abbassato per match meno perfetti
+# PROBLEMA: Template dal mazzo hanno MSE troppo simili tra loro
+# Tutti i rank hanno MSE 0.26-0.32, impossibile distinguere
+# SERVE: Template generati da screenshot live reali
+RANK_MSE_THRESHOLD = 0.50  # Molto permissivo
+SUIT_MSE_THRESHOLD = 0.50  # Molto permissivo  
+MIN_COMBINED_CONFIDENCE = 0.50  # Molto abbassato
 
 # Card dimensions (from our config)
 CARD_WIDTH = 89
