@@ -293,7 +293,7 @@ class DecisionEngine:
                 equity=equity
             )
         else:
-            raise_amount = min(hand_state.hero_stack, hand_state.pot_size * 0.5)
+            raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_no_cost_multiplier)
             return Decision(
                 action="RAISE",
                 raise_amount=raise_amount,
