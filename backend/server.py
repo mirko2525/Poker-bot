@@ -257,7 +257,10 @@ class MockEquityEngine:
         # Add randomness only if enabled (Ordini Fase 2)  
         if self.enable_random:
             equity += random.uniform(-10, 10)
-        return max(5, min(95, equity))
+        
+        # Convert to decimal 0-1 range (was percentage 0-100)
+        equity_decimal = max(0.05, min(0.95, equity / 100.0))
+        return equity_decimal
 
 class DecisionEngine:
     def __init__(self):
