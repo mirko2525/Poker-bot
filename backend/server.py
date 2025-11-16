@@ -174,7 +174,10 @@ class MockStateProvider:
         return self.current_index < len(self.mock_hands)
 
 class MockEquityEngine:
-    def __init__(self):
+    def __init__(self, enable_random=True):
+        # Controllo randomness (Ordini Fase 2)
+        self.enable_random = enable_random
+        
         # Preflop equity table (simplified)
         self.preflop_equity = {
             "AA": 85, "KK": 82, "QQ": 80, "JJ": 77, "TT": 75,
@@ -182,7 +185,7 @@ class MockEquityEngine:
             "KQ": 63, "KJ": 60, "QJ": 58, "JT": 56,
             "A2": 55, "K2": 50, "Q2": 45, "J2": 42, "T2": 40,
             "22": 50, "33": 52, "44": 54, "55": 56, "66": 58,
-            "77": 60, "88": 63, "99": 65
+            "77": 60, "88": 63, "99": 65, "T9": 54, "98": 52, "87": 50
         }
     
     def compute_equity(self, hand_state: HandState) -> float:
