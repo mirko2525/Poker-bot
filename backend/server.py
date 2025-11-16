@@ -253,35 +253,52 @@ class MockEquityEngine:
         return equity_decimal
     
     def _compute_postflop_equity(self, hand_state: HandState) -> float:
-        # Simplified postflop equity based on hand strength and draws
-        base_equity = self._compute_preflop_equity(hand_state.hero_cards)
+        """
+        Compute postflop equity based on hand strength and board texture.
+        Returns value in decimal range 0-1 (not percentage).
+        """
+        # Start with preflop equity as base (already in decimal 0-1)
+        base_equity_decimal = self._compute_preflop_equity(hand_state.hero_cards)
         
-        # Adjust based on board texture and phase
-        phase_multiplier = {
-            "FLOP": 0.8,
-            "TURN": 0.9,
-            "RIVER": 1.0
-        }
+        # Convert to percentage for easier manipulation
+        equity_pct = base_equity_decimal * 100.0
         
-        equity = base_equity * phase_multiplier[hand_state.phase]
-        
-        # Add board analysis (very simplified)
+        # Analyze board interaction
         board_cards = hand_state.board_cards
         hero_ranks = [card[0] for card in hand_state.hero_cards]
         board_ranks = [card[0] for card in board_cards]
         
-        # Check for pairs, two pairs, etc. (simplified)
+        # Check for pairs, trips with board (simplified)
         hero_on_board = len(set(hero_ranks) & set(board_ranks))
-        if hero_on_board > 0:
-            equity += 15  # Boost for hitting the board
         
-        # Add randomness only if enabled (Ordini Fase 2)  
-        if self.enable_random:
-            equity += random.uniform(-10, 10)
+        if hero_on_board == 2:
+            # Both hero cards on board (two pair or better)
+            equity_pct = min(95, equity_pct + 15)
+        elif hero_on_board == 1:
+            # One hero card on board (pair)
+            equity_pct = min(90, equity_pct + 8)
+        elif hero_on_board == 0:
+            # No pair - reduce equity slightly
+            equity_pct = max(10, equity_pct - 10)
         
-        # Convert to decimal 0-1 range (was percentage 0-100)
-        equity_decimal = max(0.05, min(0.95, equity / 100.0))
-        return equity_decimal
+        # Adjust for phase (equity typically decreases as unknowns decrease)
+        # But for strong hands, equity often holds or increases
+        if hand_state.phase == "RIVER":
+            # On river, equity is more certain
+            # Strong hands stay strong, weak hands stay weak
+            pass  # No adjustment
+        elif hand_state.phase == "TURN":
+            # On turn, small variance
+            if self.enable_random:
+                equity_pct += random.uniform(-3, 3)
+        else:  # FLOP
+            # On flop, more variance
+            if self.enable_random:
+                equity_pct += random.uniform(-5, 5)
+        
+        # Clamp and convert back to decimal
+        equity_pct = max(5, min(95, equity_pct))
+        return equity_pct / 100.0
 
 class DecisionEngine:
     def __init__(self):
