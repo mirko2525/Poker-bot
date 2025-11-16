@@ -34,10 +34,11 @@ RANK_Y = 0
 RANK_WIDTH = int(CARD_WIDTH * 0.35)  # ~31px
 RANK_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~29px
 
-# Suit region coordinates (MUST match extract_rank_suit.py exactly!)
+# Suit region coordinates (CALIBRATED - Fase 6 fix)
+# Fixed from 0.20-0.45 to 0.10-0.35 based on actual card layout analysis
 SUIT_X = 0
-SUIT_Y = int(CARD_HEIGHT * 0.20)  # 24px
-SUIT_Y_END = int(CARD_HEIGHT * 0.45)  # 53px
+SUIT_Y = int(CARD_HEIGHT * 0.10)  # 12px (was 24px)
+SUIT_Y_END = int(CARD_HEIGHT * 0.35)  # 41px (was 53px)
 SUIT_WIDTH = int(CARD_WIDTH * 0.35)  # 31px
 SUIT_HEIGHT = SUIT_Y_END - SUIT_Y  # 29px
 
