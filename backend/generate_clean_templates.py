@@ -32,16 +32,11 @@ logger = logging.getLogger(__name__)
 KNOWN_CARDS = {
     "pokerstars_flop.png": {
         "phase": "FLOP",
-        "cards": ["6d", "Ah", "2c"]  # slot 1, 2, 3
+        "cards": ["6d", "Ah", "2c"]  # slot 1, 2, 3 - VERIFIED
     },
-    "pokerstars_turn.png": {
-        "phase": "TURN", 
-        "cards": ["Ah", "?", "?", "?"]  # slot 1, 2, 3, 4 - DA IDENTIFICARE MANUALMENTE
-    },
-    "pokerstars_river.png": {
-        "phase": "RIVER",
-        "cards": ["?", "?", "?", "?", "?"]  # slot 0, 1, 2, 3, 4 - DA IDENTIFICARE MANUALMENTE
-    },
+    # NOTE: Altri screenshot da identificare manualmente
+    # "pokerstars_turn.png": {...},
+    # "pokerstars_river.png": {...},
 }
 
 # Mapping rank symbol → filename
