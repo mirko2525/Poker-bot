@@ -2,11 +2,15 @@
 """
 Script per estrarre RANK e SUIT da carte complete.
 Crea template riutilizzabili per Piano A (13 ranks + 4 suits).
+
+FASE 6 FIX: Usa normalize_card_image() come single source of truth.
+Template e live recognition passano dalla STESSA normalizzazione.
 """
 
 from pathlib import Path
 from PIL import Image
 import sys
+from card_normalization import normalize_card_image
 
 def extract_rank_suit_from_card(card_image_path: str, card_code: str):
     """
