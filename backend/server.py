@@ -65,9 +65,12 @@ class StatusCheckCreate(BaseModel):
 # Poker Bot Logic - Mock Implementations
 class MockStateProvider:
     def __init__(self):
+        # Espansione a 8 mani per coprire scenari diversificati (Ordini Fase 2)
+        # Mani organizzate in sequenza logica per creare una "storia di test"
         self.mock_hands = [
+            # 1. Strong PREFLOP (AA) - Small pot, low to_call
             {
-                "hero_cards": ["Ah", "Ks"],
+                "hero_cards": ["As", "Ad"],
                 "board_cards": [],
                 "hero_stack": 100.0,
                 "pot_size": 3.0,
@@ -76,46 +79,62 @@ class MockStateProvider:
                 "players_in_hand": 3,
                 "phase": "PREFLOP"
             },
+            # 2. Marginal PREFLOP (KJo) - Large raise to call
             {
-                "hero_cards": ["Ah", "Ks"],
-                "board_cards": ["7c", "Td", "2s"],
+                "hero_cards": ["Kh", "Jd"],
+                "board_cards": [],
                 "hero_stack": 98.0,
                 "pot_size": 12.0,
-                "to_call": 5.0,
+                "to_call": 8.0,
+                "big_blind": 1.0,
+                "players_in_hand": 4,
+                "phase": "PREFLOP"
+            },
+            # 3. FLOP - Top pair top kicker, small pot
+            {
+                "hero_cards": ["Ah", "Ks"],
+                "board_cards": ["Ad", "7c", "2s"],
+                "hero_stack": 90.0,
+                "pot_size": 15.0,
+                "to_call": 3.0,
                 "big_blind": 1.0,
                 "players_in_hand": 3,
                 "phase": "FLOP"
             },
+            # 4. FLOP - Flush draw with interesting pot odds
+            {
+                "hero_cards": ["9h", "8h"],
+                "board_cards": ["7h", "5h", "2c"],
+                "hero_stack": 87.0,
+                "pot_size": 20.0,
+                "to_call": 5.0,
+                "big_blind": 1.0,
+                "players_in_hand": 2,
+                "phase": "FLOP"
+            },
+            # 5. TURN - Completed straight draw, medium pot
             {
                 "hero_cards": ["Qh", "Jd"],
-                "board_cards": ["Kc", "Ts", "9h", "2d"],
-                "hero_stack": 85.0,
-                "pot_size": 24.0,
-                "to_call": 8.0,
+                "board_cards": ["Kc", "Ts", "9h", "4d"],
+                "hero_stack": 82.0,
+                "pot_size": 30.0,
+                "to_call": 10.0,
                 "big_blind": 1.0,
                 "players_in_hand": 2,
                 "phase": "TURN"
             },
+            # 6. RIVER - Weak hand, big pot, large to_call
             {
-                "hero_cards": ["As", "Ad"],
-                "board_cards": ["Kh", "Qc", "Js", "Tc", "9d"],
-                "hero_stack": 77.0,
-                "pot_size": 45.0,
-                "to_call": 15.0,
+                "hero_cards": ["2h", "7c"],
+                "board_cards": ["Ac", "Kd", "Qh", "Js", "5s"],
+                "hero_stack": 72.0,
+                "pot_size": 60.0,
+                "to_call": 25.0,
                 "big_blind": 1.0,
                 "players_in_hand": 2,
                 "phase": "RIVER"
             },
-            {
-                "hero_cards": ["2h", "7c"],
-                "board_cards": ["Ac", "Kd", "Qh"],
-                "hero_stack": 45.0,
-                "pot_size": 18.0,
-                "to_call": 12.0,
-                "big_blind": 1.0,
-                "players_in_hand": 3,
-                "phase": "FLOP"
-            },
+            # 7. Short stack situation (<10 BB) with good equity -> all-in testing
             {
                 "hero_cards": ["Jh", "Jc"],
                 "board_cards": [],
@@ -125,6 +144,17 @@ class MockStateProvider:
                 "big_blind": 1.0,
                 "players_in_hand": 4,
                 "phase": "PREFLOP"
+            },
+            # 8. Borderline situation where equity ≈ pot odds -> CALL/FOLD logic testing
+            {
+                "hero_cards": ["Tc", "9c"],
+                "board_cards": ["8h", "7d", "2s"],
+                "hero_stack": 47.0,
+                "pot_size": 24.0,
+                "to_call": 8.0,
+                "big_blind": 1.0,
+                "players_in_hand": 3,
+                "phase": "FLOP"
             }
         ]
         self.current_index = 0
