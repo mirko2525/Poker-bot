@@ -37,12 +37,16 @@ def extract_rank_suit_from_card(card_image_path: str, card_code: str):
     rank = card_code[0].upper()
     suit = card_code[1].lower()
     
-    # Load image
-    img = Image.open(img_path)
+    # Load image (RAW, with green background)
+    img_raw = Image.open(img_path)
     
     print(f"📸 Processing: {card_image_path}")
     print(f"   Card code: {card_code}")
-    print(f"   Image size: {img.width}x{img.height}")
+    print(f"   Image size: {img_raw.width}x{img_raw.height}")
+    
+    # NORMALIZE with single source of truth
+    img = normalize_card_image(img_raw)
+    print(f"   Normalized: {img.width}x{img.height} (grayscale)")
     print()
     
     # Extract rank region (top-left corner, upper portion)
