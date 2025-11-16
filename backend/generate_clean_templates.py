@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 KNOWN_CARDS = {
     "pokerstars_flop.png": {
         "phase": "FLOP",
-        "cards": ["6d", "Ah", "2c"]  # slot 1, 2, 3 - VERIFIED
+        "cards": ["Ah", "6d", "2c"]  # slot 1, 2, 3 - ORDINE CORRETTO DA SINISTRA A DESTRA
     },
     # NOTE: Altri screenshot da identificare manualmente
     # "pokerstars_turn.png": {...},
