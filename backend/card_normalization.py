@@ -21,7 +21,8 @@ CARD_TEMPLATE_HEIGHT = 118
 def normalize_card_image(card_image: Image.Image,
                         target_width: int = CARD_TEMPLATE_WIDTH,
                         target_height: int = CARD_TEMPLATE_HEIGHT,
-                        use_autocontrast: bool = True) -> Image.Image:
+                        use_autocontrast: bool = True,
+                        isolate_card: bool = True) -> Image.Image:
     """
     Normalizza una carta per template generation o recognition.
     
@@ -29,22 +30,27 @@ def normalize_card_image(card_image: Image.Image,
     Template e live recognition DEVONO usare questa funzione.
     
     Pipeline:
-    1. Convert to grayscale
-    2. Resize to standard dimensions (LANCZOS)
-    3. Optional: light autocontrast (same for template and live)
-    
-    NO green removal, NO color tricks, NO different paths.
+    1. Isolate card from green table (optional, default ON)
+    2. Convert to grayscale
+    3. Resize to standard dimensions (LANCZOS)
+    4. Optional: light autocontrast (same for template and live)
     
     Args:
         card_image: PIL Image della carta (raw, con sfondo verde o altro)
         target_width: Larghezza target (default 89px)
         target_height: Altezza target (default 118px)
-        use_autocontrast: Applica autocontrast leggero (default False)
+        use_autocontrast: Applica autocontrast leggero (default True)
+        isolate_card: Isola carta bianca da sfondo verde (default True)
     
     Returns:
         PIL Image normalizzata (grayscale, resized)
     """
     try:
+        # Step 0: Isolate white card from green table
+        if isolate_card:
+            from card_isolation import isolate_card_simple_threshold
+            card_image = isolate_card_simple_threshold(card_image)
+        
         # Step 1: Convert to grayscale
         if card_image.mode != 'L':
             grayscale = ImageOps.grayscale(card_image)
