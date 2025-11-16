@@ -39,9 +39,12 @@ const PokerBotDemo = () => {
   };
 
   const getNextHand = async () => {
+    console.log('getNextHand function called!');
     try {
       setIsLoading(true);
+      console.log('Making API call to:', `${API}/poker/demo/next`);
       const response = await axios.get(`${API}/poker/demo/next`);
+      console.log('API response:', response.data);
       const { hand_number, hand_state, decision, has_next } = response.data;
       
       setCurrentHand({ hand_state, decision });
