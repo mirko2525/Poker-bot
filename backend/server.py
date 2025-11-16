@@ -364,9 +364,9 @@ class DecisionEngine:
                     pot_odds=pot_odds * 100
                 )
 
-# Initialize the poker bot components
+# Initialize the poker bot components (Fase 2: Sincronizzazione parametri)
 mock_state_provider = MockStateProvider()
-equity_engine = MockEquityEngine()
+equity_engine = MockEquityEngine(enable_random=True)  # Randomness per web demo
 decision_engine = DecisionEngine()
 
 
