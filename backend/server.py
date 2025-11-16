@@ -246,8 +246,9 @@ class MockEquityEngine:
         if hero_on_board > 0:
             equity += 15  # Boost for hitting the board
         
-        # Add randomness
-        equity += random.uniform(-10, 10)
+        # Add randomness only if enabled (Ordini Fase 2)  
+        if self.enable_random:
+            equity += random.uniform(-10, 10)
         return max(5, min(95, equity))
 
 class DecisionEngine:
