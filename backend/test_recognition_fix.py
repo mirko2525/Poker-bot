@@ -139,7 +139,7 @@ def test_screenshot_recognition(screenshot_path: str):
 
 if __name__ == "__main__":
     # Screenshot fornito dall'utente
-    screenshot_path = "/app/Screenshot 2025-11-16 150959.png"
+    screenshot_path = "/app/Screenshot 2025-11-16 130313.png"
     
     if not Path(screenshot_path).exists():
         logger.error(f"❌ Screenshot non trovato: {screenshot_path}")
