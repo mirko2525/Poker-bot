@@ -178,14 +178,35 @@ class MockEquityEngine:
         # Controllo randomness (Ordini Fase 2)
         self.enable_random = enable_random
         
-        # Preflop equity table (simplified)
+        # Preflop equity table (simplified) - values in percentage
+        # These represent equity vs random hand heads-up
         self.preflop_equity = {
+            # Premium pairs
             "AA": 85, "KK": 82, "QQ": 80, "JJ": 77, "TT": 75,
+            # Strong broadway
             "AK": 67, "AQ": 65, "AJ": 63, "AT": 60,
             "KQ": 63, "KJ": 60, "QJ": 58, "JT": 56,
-            "A2": 55, "K2": 50, "Q2": 45, "J2": 42, "T2": 40,
+            # Weak aces and kings
+            "A9": 58, "A8": 57, "A7": 56, "A6": 55, "A5": 55,
+            "A4": 54, "A3": 54, "A2": 53,
+            "K9": 55, "K8": 54, "K7": 53, "K6": 52, "K5": 51,
+            "K4": 50, "K3": 49, "K2": 48,
+            "Q9": 52, "Q8": 51, "Q7": 50, "Q6": 49, "Q5": 48,
+            "Q4": 47, "Q3": 46, "Q2": 45,
+            "J9": 50, "J8": 49, "J7": 48, "J6": 47, "J5": 46,
+            "J4": 45, "J3": 44, "J2": 43,
+            "T9": 54, "T8": 53, "T7": 51, "T6": 49, "T5": 48,
+            "T4": 47, "T3": 46, "T2": 45,
+            # Pairs
             "22": 50, "33": 52, "44": 54, "55": 56, "66": 58,
-            "77": 60, "88": 63, "99": 65, "T9": 54, "98": 52, "87": 50
+            "77": 60, "88": 63, "99": 65,
+            # Connectors and suited combos
+            "98": 52, "87": 50, "76": 49, "65": 48, "54": 46,
+            "97": 48, "86": 47, "75": 46, "64": 44, "53": 43,
+            "96": 46, "85": 45, "74": 43, "63": 42, "52": 40,
+            "95": 44, "84": 43, "73": 41, "62": 39, "42": 37,
+            "94": 42, "83": 41, "72": 38, "32": 36,
+            "93": 40, "82": 39, "92": 38, "43": 39
         }
     
     def compute_equity(self, hand_state: HandState) -> float:
