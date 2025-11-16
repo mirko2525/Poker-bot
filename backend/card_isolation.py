@@ -83,30 +83,33 @@ def isolate_card_from_green_table(card_image: Image.Image) -> Image.Image:
 
 def isolate_card_simple_threshold(card_image: Image.Image) -> Image.Image:
     """
-    Versione semplificata: threshold su brightness per isolare carta bianca.
+    Isola carta dal tavolo verde sostituendo SOLO il verde con bianco.
+    Preserva simboli neri e colorati della carta.
     
     Args:
         card_image: PIL Image contenente carta + sfondo verde
     
     Returns:
-        PIL Image con sfondo verde sostituito da bianco
+        PIL Image con sfondo verde sostituito da bianco, simboli preservati
     """
     try:
         # Convert to numpy
         img_rgb = np.array(card_image.convert('RGB'))
         
-        # Convert to grayscale for brightness check
-        gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+        # Convert to HSV for better color detection
+        hsv = cv2.cvtColor(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR), cv2.COLOR_BGR2HSV)
         
-        # Threshold: pixels brighter than 150 are likely card (white)
-        # Pixels darker than 150 are likely table (green)
-        _, mask = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+        # Define range for GREEN color (tavolo)
+        # Green: H=60 (35-85), high S, medium V
+        lower_green = np.array([25, 40, 20])
+        upper_green = np.array([95, 255, 120])
         
-        # Create white background
-        result = np.full_like(img_rgb, 255)  # All white
+        # Mask green pixels (tavolo)
+        mask_green = cv2.inRange(hsv, lower_green, upper_green)
         
-        # Copy card pixels (white areas from mask)
-        result[mask > 0] = img_rgb[mask > 0]
+        # Replace ONLY green pixels with white
+        result = img_rgb.copy()
+        result[mask_green > 0] = [255, 255, 255]
         
         # Convert back to PIL
         result_pil = Image.fromarray(result)
