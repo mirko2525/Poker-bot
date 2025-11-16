@@ -416,7 +416,7 @@ class DecisionEngine:
                 return Decision(
                     action="CALL",
                     raise_amount=0.0,
-                    reason=f"Good equity ({equity:.1f}%) vs pot odds ({pot_odds*100:.1f}%) - call",
+                    reason=f"Good equity ({equity*100:.1f}%) vs pot odds ({pot_odds*100:.1f}%) - call",
                     equity=equity,
                     pot_odds=pot_odds * 100
                 )
