@@ -73,3 +73,4 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+backend/output_regions*/
