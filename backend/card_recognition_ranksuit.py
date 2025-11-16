@@ -197,27 +197,8 @@ def recognize_card_ranksuit(
         from card_normalization import normalize_card_for_template
         normalized_card = normalize_card_for_template(card_image)
         
-        # Check for empty card position
-        # Capo's info: carte hanno SFONDO BIANCO, tavolo verde NO white pixels
-        # Use image WITHOUT autocontrast AND isolation for accurate white detection
-        card_no_contrast = normalize_card_image(card_image, use_autocontrast=False, isolate_card=False)
-        card_arr = np.array(card_no_contrast, dtype=np.float32)
-        
-        # Count WHITE pixels (carta = sfondo bianco)
-        # White = brightness > 200 (out of 255)
-        white_pixels = np.sum(card_arr > 200)
-        total_pixels = card_arr.size
-        white_ratio = white_pixels / total_pixels
-        
-        # Real cards have white pixels (sfondo bianco della carta)
-        # Green table has <3% white pixels (solo riflessi/ombre)
-        # SOGLIA ABBASSATA A 0.008 per carte con bordi/ombre/angolazioni
-        # La Fase 1 (slot detection) già filtra le posizioni vuote
-        if white_ratio < 0.008:
-            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.008)")
-            return None, 0.0
-        else:
-            logger.debug(f"Card detected: white_ratio={white_ratio:.3f} (threshold: 0.008) ✓")
+        # ORDINE CAPO FASE 6.2: NO empty check needed
+        # Geometric detection già garantisce che ci sono carte nelle posizioni estratte
         
         # Extract regions from NORMALIZED card
         rank_region = extract_rank_region(normalized_card)
