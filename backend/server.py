@@ -226,7 +226,10 @@ class MockEquityEngine:
         # Add randomness only if enabled (Ordini Fase 2)
         if self.enable_random:
             equity += random.uniform(-5, 5)
-        return max(10, min(95, equity))  # Clamp between 10-95%
+        
+        # Convert to decimal 0-1 range (was percentage 0-100)
+        equity_decimal = max(0.10, min(0.95, equity / 100.0))
+        return equity_decimal
     
     def _compute_postflop_equity(self, hand_state: HandState) -> float:
         # Simplified postflop equity based on hand strength and draws
