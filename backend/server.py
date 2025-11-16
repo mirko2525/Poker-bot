@@ -386,7 +386,7 @@ class DecisionEngine:
             return Decision(
                 action="FOLD",
                 raise_amount=0.0,
-                reason=f"Equity ({equity:.1f}%) insufficient vs pot odds ({pot_odds*100:.1f}%)",
+                reason=f"Equity ({equity*100:.1f}%) insufficient vs pot odds ({pot_odds*100:.1f}%)",
                 equity=equity,
                 pot_odds=pot_odds * 100
             )
