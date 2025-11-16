@@ -24,8 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Recognition parameters
-DIGIT_MSE_THRESHOLD = 0.15  # Threshold for digit matching
-MIN_DIGIT_CONFIDENCE = 0.6  # Minimum confidence for digit recognition
+DIGIT_MSE_THRESHOLD = 0.25  # Threshold for digit matching (relaxed for synthetic templates)
+MIN_DIGIT_CONFIDENCE = 0.5  # Minimum confidence for digit recognition (relaxed)
 DIGIT_SPACING_THRESHOLD = 5  # Max pixels between digits in same number
 
 
