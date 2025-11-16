@@ -192,9 +192,10 @@ def recognize_card_ranksuit(
         return None, 0.0
     
     try:
-        # STEP 1: NORMALIZE with single source of truth
-        # Same transformation used for template generation
-        normalized_card = normalize_card_image(card_image)
+        # STEP 1: NORMALIZE with PIPELINE UNICA (ORDINE CAPO FASE 6.2)
+        # SAME transformation used for template generation
+        from card_normalization import normalize_card_for_template
+        normalized_card = normalize_card_for_template(card_image)
         
         # Check for empty card position
         # Capo's info: carte hanno SFONDO BIANCO, tavolo verde NO white pixels
