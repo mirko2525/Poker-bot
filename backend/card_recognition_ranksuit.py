@@ -3,9 +3,16 @@
 CARD RECOGNITION - RANK+SUIT SYSTEM
 Fase 6 - Sistema basato su template separati rank (13) + suit (4).
 
+FASE 6 FIX FINALE: Unified pipeline
+- Template e live recognition usano STESSA normalize_card_image()
+- NO green removal, solo grayscale + resize
+- Template generati da carte raw, live usa carte raw
+- Tutto passa dalla stessa trasformazione
+
 Ordini del Capo:
 - Carica rank_templates e suit_templates separati
-- Estrae rank_region e suit_region dalla carta
+- Normalizza la carta con normalize_card_image()
+- Estrae rank_region e suit_region dalla carta normalizzata
 - MSE matching separato per ciascuno
 - Combina confidence per decisione finale
 """
@@ -15,6 +22,7 @@ from PIL import Image, ImageOps
 import numpy as np
 from typing import Dict, Tuple, Optional, List
 import logging
+from card_normalization import normalize_card_image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
