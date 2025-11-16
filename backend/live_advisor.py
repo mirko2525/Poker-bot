@@ -47,13 +47,17 @@ def stampa_hand_state_e_decisione(hand_state: HandState, equity: float, decision
     print(f"📈 Equity stimata: {equity:.2%}")
     print(f"▲ Azione consigliata: {decision.action}", end="")
     
-    if decision.action == "RAISE" and decision.raise_amount > 0:
-        print(f" (raise: ${decision.raise_amount:.2f})")
+    # Gestione robusta di raise_amount (potrebbe non esistere o essere 0)
+    raise_amount = getattr(decision, "raise_amount", 0)
+    if decision.action == "RAISE" and raise_amount > 0:
+        print(f" (raise: ${raise_amount:.2f})")
     else:
         print()
     
-    if decision.reason:
-        print(f"💡 Motivo: {decision.reason}")
+    # Gestione robusta di reason (potrebbe non esistere o essere None)
+    reason = getattr(decision, "reason", None)
+    if reason:
+        print(f"💡 Motivo: {reason}")
 
 
 def run_live_advisor_demo() -> None:
