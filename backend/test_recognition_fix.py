@@ -57,6 +57,13 @@ def test_screenshot_recognition(screenshot_path: str):
         logger.error("❌ FASE 1 FALLITA: Nessuna carta trovata!")
         return
     
+    # Load templates per recognition
+    logger.info("\n📚 Caricamento template...")
+    rank_templates = load_rank_templates()
+    suit_templates = load_suit_templates()
+    logger.info(f"   ✅ {len(rank_templates)} rank templates")
+    logger.info(f"   ✅ {len(suit_templates)} suit templates")
+    
     # FASE 2: RECOGNITION (Rank+Suit Matching)
     logger.info(f"\n{'─'*80}")
     logger.info(f"🔍 FASE 2: RECOGNITION (Rank+Suit Matching)")
