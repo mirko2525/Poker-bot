@@ -29,19 +29,19 @@ def test_screenshot_recognition(screenshot_path: str):
     screenshot = Image.open(screenshot_path)
     logger.info(f"✅ Screenshot caricato: {screenshot.size}")
     
-    # Room config PokerStars (Dresda III)
+    # Room config PokerStars (Dresda III) - COORDINATE CORRETTE
     room_config = {
         'zones': {
             'board_row': {
-                'x': 985,
-                'y': 793, 
-                'width': 1084,
-                'height': 380
+                'x': 1150,
+                'y': 850, 
+                'width': 300,
+                'height': 150
             }
         },
         'detection_params': {
-            'max_board_cards': 5,
-            'card_white_threshold': 0.08  # Abbassato per testare
+            'max_board_cards': 3,  # Solo 3 carte board visibili
+            'card_white_threshold': 0.15  # Soglia normale
         }
     }
     
