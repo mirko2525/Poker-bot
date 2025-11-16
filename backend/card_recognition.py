@@ -24,8 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Recognition parameters
-MSE_THRESHOLD = 0.08  # Maximum MSE to accept a card match (tightened for better precision)
-MIN_CONFIDENCE_SCORE = 0.85  # Minimum confidence score to accept recognition (tightened)
+MSE_THRESHOLD = 0.001  # Maximum MSE to accept a card match (VERY strict - only near-perfect matches)
+MIN_CONFIDENCE_SCORE = 0.999  # Minimum confidence score to accept recognition (near-perfect only)
 
 
 def calculate_mse(image1: np.ndarray, image2: np.ndarray) -> float:
