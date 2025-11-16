@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Import moduli del bot
 from card_detector_simple import cut_board_cards_slot_based
-from card_recognition_ranksuit import recognize_card_rank_suit
+from card_recognition_ranksuit import recognize_card_ranksuit
 
 def test_screenshot_recognition(screenshot_path: str):
     """
