@@ -317,7 +317,7 @@ def test_number_recognition_on_regions(output_regions_dir: str,
     # Test each number region
     for region_type, file_path in number_files:
         try:
-            print(f"\\n🔍 Analyzing {region_type} region:")
+            print(f"\n🔍 Analyzing {region_type} region:")
             
             number_img = Image.open(file_path)
             print(f"   Image size: {number_img.width}x{number_img.height}")
