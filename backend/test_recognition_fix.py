@@ -112,23 +112,28 @@ def test_screenshot_recognition(screenshot_path: str):
     logger.info(f"\n{'='*80}")
     logger.info(f"📊 SUMMARY FINALE")
     logger.info(f"{'='*80}")
-    logger.info(f"Carte estratte (Fase 1):    {len(cards)}")
+    logger.info(f"Carte estratte (Fase 1):    {len(cards)} ({len(board_cards)} board + {len(hero_cards)} hero)")
     logger.info(f"Carte riconosciute (Fase 2): {len(recognized_cards)}")
     logger.info(f"Success rate:                {len(recognized_cards)}/{len(cards)} = {len(recognized_cards)/len(cards)*100:.1f}%")
     
     if recognized_cards:
-        logger.info(f"\n🎴 Carte board riconosciute:")
-        for card_str, conf in recognized_cards:
-            logger.info(f"   • {card_str} ({conf:.1%})")
+        logger.info(f"\n🎴 Board Cards (attese: 7♣, 3♠, 9♥, Q♠, 10♣):")
+        for i, (card_str, conf) in enumerate(recognized_cards[:len(board_cards)]):
+            logger.info(f"   {i+1}. {card_str} ({conf:.1%})")
+        
+        if len(recognized_cards) > len(board_cards):
+            logger.info(f"\n🃏 Hero Cards (attese: 3♦, 4♥):")
+            for i, (card_str, conf) in enumerate(recognized_cards[len(board_cards):]):
+                logger.info(f"   {i+1}. {card_str} ({conf:.1%})")
     
     logger.info(f"\n{'='*80}\n")
     
-    # Verifica attesa: 3 carte board (7♦, A♠, 9♠)
-    if len(recognized_cards) >= 3:
-        logger.info("✅ TEST PASSED: Almeno 3 carte riconosciute!")
+    # Verifica attesa: 5 board + 2 hero = 7 carte totali
+    if len(recognized_cards) >= 5:
+        logger.info("✅ TEST PASSED: Almeno 5 carte riconosciute!")
         return True
     else:
-        logger.error("❌ TEST FAILED: Meno di 3 carte riconosciute")
+        logger.error("❌ TEST FAILED: Meno di 5 carte riconosciute")
         return False
 
 
