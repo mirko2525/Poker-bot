@@ -117,12 +117,12 @@ def test_screenshot_recognition(screenshot_path: str):
     logger.info(f"Success rate:                {len(recognized_cards)}/{len(cards)} = {len(recognized_cards)/len(cards)*100:.1f}%")
     
     if recognized_cards:
-        logger.info(f"\n🎴 Board Cards (attese: 7♣, 3♠, 9♥, Q♠, 10♣):")
+        logger.info(f"\n🎴 Board Cards (attese: 2♥, 5♥, 6♥, 3♣):")
         for i, (card_str, conf) in enumerate(recognized_cards[:len(board_cards)]):
             logger.info(f"   {i+1}. {card_str} ({conf:.1%})")
         
         if len(recognized_cards) > len(board_cards):
-            logger.info(f"\n🃏 Hero Cards (attese: 3♦, 4♥):")
+            logger.info(f"\n🃏 Hero Cards (attese: 9♦, 9♣):")
             for i, (card_str, conf) in enumerate(recognized_cards[len(board_cards):]):
                 logger.info(f"   {i+1}. {card_str} ({conf:.1%})")
     
