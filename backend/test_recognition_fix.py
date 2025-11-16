@@ -29,13 +29,13 @@ def test_screenshot_recognition(screenshot_path: str):
     screenshot = Image.open(screenshot_path)
     logger.info(f"✅ Screenshot caricato: {screenshot.size}")
     
-    # Room config PokerStars - COORDINATE OTTIMIZZATE per screenshot 090117
+    # Room config PokerStars - COORDINATE OTTIMIZZATE per screenshot 130313
     room_config = {
         'zones': {
             'board_row': {
-                'x': 1200,
+                'x': 1180,
                 'y': 950, 
-                'width': 600,
+                'width': 500,
                 'height': 150
             },
             'hero_row': {
@@ -46,7 +46,7 @@ def test_screenshot_recognition(screenshot_path: str):
             }
         },
         'detection_params': {
-            'max_board_cards': 5,
+            'max_board_cards': 4,
             'max_hero_cards': 2,
             'card_white_threshold': 0.15
         }
