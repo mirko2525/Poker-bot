@@ -113,4 +113,8 @@ def main():
     print(f"   Dimensions: {mock_screenshot.width}x{mock_screenshot.height}")
     print("   Content: A♠ K♥ vs 7♣ T♦ 2♠, Pot: $24.50, Stack: $87.25")
     print()
-    print("You can now run: python analyze_screenshot.py")\n\n\nif __name__ == \"__main__\":\n    main()\n"
+    print("You can now run: python analyze_screenshot.py")
+
+
+if __name__ == "__main__":
+    main()
