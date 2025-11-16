@@ -50,9 +50,9 @@ def extract_rank_suit_from_card(card_image_path: str, card_code: str):
     rank_region = img.crop((0, 0, rank_width, rank_height))
     
     # Extract suit region (top-left corner, overlaps with rank)
-    # CALIBRATED coordinates (Fase 6 fix): 10%-35% instead of 20%-45%
-    suit_y_start = int(img.height * 0.10)
-    suit_y_end = int(img.height * 0.35)
+    # CALIBRATED coordinates (Fase 6 fix v2): 12%-37% for better balance
+    suit_y_start = int(img.height * 0.12)
+    suit_y_end = int(img.height * 0.37)
     suit_width = int(img.width * 0.35)
     
     suit_region = img.crop((0, suit_y_start, suit_width, suit_y_end))
