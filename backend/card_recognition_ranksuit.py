@@ -194,20 +194,23 @@ def recognize_card_ranksuit(
         normalized_card = normalize_card_image(card_image)
         
         # Check for empty card position
-        card_arr = np.array(normalized_card, dtype=np.float32)
-        mean_brightness = card_arr.mean()
-        brightness_std = card_arr.std()
+        # Use ORIGINAL image without autocontrast for empty detection
+        card_original = normalize_card_image(card_image, use_autocontrast=False)
+        card_arr_orig = np.array(card_original, dtype=np.float32)
         
-        # Empty position detection - check for WHITE pixels (card background)
-        # Real cards have white background (brightness > 200 after autocontrast)
-        # Green table has NO white pixels
-        white_pixels = np.sum(card_arr > 200)
-        total_pixels = card_arr.size
+        # Real cards have white background (brightness > 180 without autocontrast)
+        # Green table has uniform low brightness (40-60)
+        white_pixels = np.sum(card_arr_orig > 180)
+        total_pixels = card_arr_orig.size
         white_ratio = white_pixels / total_pixels
         
-        # If less than 5% white pixels → no card present (only green table)
-        if white_ratio < 0.05:
-            logger.debug(f"Empty position detected: white_ratio={white_ratio:.3f}, brightness={mean_brightness:.1f}")
+        # Also check brightness uniformity (tavolo verde è uniforme)
+        brightness_mean = card_arr_orig.mean()
+        brightness_std = card_arr_orig.std()
+        
+        # Empty if: very few white pixels AND low variance (uniform green table)
+        if white_ratio < 0.10 and brightness_std < 15:
+            logger.debug(f"Empty position: white_ratio={white_ratio:.3f}, brightness={brightness_mean:.1f}, std={brightness_std:.1f}")
             return None, 0.0
         
         # Extract regions from NORMALIZED card
