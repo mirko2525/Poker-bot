@@ -105,8 +105,8 @@ def cleanup_old_outputs():
         shutil.rmtree(old_output)
         print(f"   🗑️  Removed: {old_output}")
     
-    # Lista directory di output da pulire
-    output_dirs = ["output_regions_preflop", "output_regions_flop", "output_regions_flop2", "output_regions_turn"]
+    # Lista directory di output da pulire (corretta)
+    output_dirs = ["output_regions_preflop", "output_regions_flop", "output_regions_turn", "output_regions_turn2", "output_regions_flop2"]
     
     for output_dir in output_dirs:
         output_path = Path(output_dir)
