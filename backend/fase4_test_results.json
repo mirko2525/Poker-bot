@@ -1,0 +1,111 @@
+[
+  {
+    "screenshot": "pokerstars_preflop.png",
+    "vision_success": true,
+    "handstate": {
+      "phase": "PREFLOP",
+      "hero_cards": [
+        "??",
+        "??"
+      ],
+      "board_cards": [],
+      "pot_size": 3.0,
+      "hero_stack": 100.0,
+      "players_in_hand": 2
+    },
+    "equity": 45,
+    "decision": {
+      "action": "CALL",
+      "raise_amount": 0.0,
+      "reason": "Decent hand, check to see next card",
+      "equity": 45.0
+    },
+    "pipeline_success": true
+  },
+  {
+    "screenshot": "pokerstars_flop.png",
+    "vision_success": true,
+    "handstate": {
+      "phase": "TURN",
+      "hero_cards": [
+        "??",
+        "??"
+      ],
+      "board_cards": [
+        "6d",
+        "Ah",
+        "2c",
+        "3c"
+      ],
+      "pot_size": 3.0,
+      "hero_stack": 100.0,
+      "players_in_hand": 2
+    },
+    "equity": 40.5,
+    "decision": {
+      "action": "CALL",
+      "raise_amount": 0.0,
+      "reason": "Decent hand, check to see next card",
+      "equity": 40.5
+    },
+    "pipeline_success": true
+  },
+  {
+    "screenshot": "pokerstars_turn.png",
+    "vision_success": true,
+    "handstate": {
+      "phase": "RIVER",
+      "hero_cards": [
+        "??",
+        "??"
+      ],
+      "board_cards": [
+        "6d",
+        "Ah",
+        "2c",
+        "3c",
+        "Ac"
+      ],
+      "pot_size": 3.0,
+      "hero_stack": 100.0,
+      "players_in_hand": 2
+    },
+    "equity": 45.0,
+    "decision": {
+      "action": "CALL",
+      "raise_amount": 0.0,
+      "reason": "Decent hand, check to see next card",
+      "equity": 45.0
+    },
+    "pipeline_success": true
+  },
+  {
+    "screenshot": "pokerstars_river.png",
+    "vision_success": true,
+    "handstate": {
+      "phase": "RIVER",
+      "hero_cards": [
+        "??",
+        "??"
+      ],
+      "board_cards": [
+        "6d",
+        "Ah",
+        "2c",
+        "3c",
+        "Ac"
+      ],
+      "pot_size": 3.0,
+      "hero_stack": 100.0,
+      "players_in_hand": 2
+    },
+    "equity": 45.0,
+    "decision": {
+      "action": "CALL",
+      "raise_amount": 0.0,
+      "reason": "Decent hand, check to see next card",
+      "equity": 45.0
+    },
+    "pipeline_success": true
+  }
+]
