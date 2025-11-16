@@ -54,11 +54,23 @@ def test_screenshot_recognition(screenshot_path: str):
     
     # FASE 1: DETECTION (Slot-Based)
     logger.info(f"\n{'─'*80}")
-    logger.info(f"📍 FASE 1: DETECTION (Slot-Based)")
+    logger.info(f"📍 FASE 1: DETECTION - BOARD CARDS (Slot-Based)")
     logger.info(f"{'─'*80}")
     
-    cards = cut_board_cards_slot_based(screenshot, room_config)
-    logger.info(f"\n✅ Carte estratte dalla Fase 1: {len(cards)}")
+    board_cards = cut_board_cards_slot_based(screenshot, room_config)
+    logger.info(f"\n✅ Board cards estratte: {len(board_cards)}")
+    
+    logger.info(f"\n{'─'*80}")
+    logger.info(f"📍 FASE 1: DETECTION - HERO CARDS (Slot-Based)")
+    logger.info(f"{'─'*80}")
+    
+    from card_detector_simple import cut_hero_cards_slot_based
+    hero_cards = cut_hero_cards_slot_based(screenshot, room_config)
+    logger.info(f"\n✅ Hero cards estratte: {len(hero_cards)}")
+    
+    # Combina tutte le carte per il test
+    cards = board_cards + hero_cards
+    logger.info(f"\n✅ TOTALE carte estratte dalla Fase 1: {len(cards)}")
     
     if len(cards) == 0:
         logger.error("❌ FASE 1 FALLITA: Nessuna carta trovata!")
