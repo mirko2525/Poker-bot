@@ -22,12 +22,12 @@ def test_all_pokerstars_screenshots():
     print("=" * 60)
     print()
     
-    # Lista degli screenshot da testare
+    # Lista degli screenshot da testare (corretta dopo analisi)
     screenshot_files = [
         "pokerstars_preflop.png",
         "pokerstars_flop.png", 
-        "pokerstars_flop2.png",
-        "pokerstars_turn.png"
+        "pokerstars_turn.png",
+        "pokerstars_turn2.png"
     ]
     
     config_path = "rooms/pokerstars_6max.json"
