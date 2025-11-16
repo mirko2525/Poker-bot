@@ -50,7 +50,7 @@ def find_white_regions(screenshot_path: str, output_path: str):
     margin = 20
     board_x = max(0, min_x - margin)
     board_y = max(0, min_y - margin)
-    board_w = min_x, max_x + margin - board_x
+    board_w = max_x + margin - board_x
     board_h = max_y + margin - board_y
     
     print(f"\n📍 COORDINATE RILEVATE:")
