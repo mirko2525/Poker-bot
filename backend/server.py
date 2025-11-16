@@ -253,9 +253,21 @@ class MockEquityEngine:
 
 class DecisionEngine:
     def __init__(self):
-        self.margin = 0.05  # 5%
-        self.strong_equity_threshold = 0.65  # 65%
-        self.allin_stack_bb_threshold = 10  # 10 BB
+        # Costanti configurabili (Ordini Fase 2)
+        # Importiamo le costanti dal file di configurazione
+        from poker_config import (
+            MARGIN, STRONG_EQUITY_THRESHOLD, ALLIN_STACK_BB_THRESHOLD,
+            SHORT_STACK_BORDERLINE_BB, HIGH_EQUITY_FOR_ALLIN,
+            RAISE_POT_MULTIPLIER, RAISE_NO_COST_MULTIPLIER
+        )
+        
+        self.margin = MARGIN
+        self.strong_equity_threshold = STRONG_EQUITY_THRESHOLD  
+        self.allin_stack_bb_threshold = ALLIN_STACK_BB_THRESHOLD
+        self.short_stack_borderline_bb = SHORT_STACK_BORDERLINE_BB
+        self.high_equity_for_allin = HIGH_EQUITY_FOR_ALLIN
+        self.raise_pot_multiplier = RAISE_POT_MULTIPLIER
+        self.raise_no_cost_multiplier = RAISE_NO_COST_MULTIPLIER
     
     def decide_action(self, hand_state: HandState, equity: float) -> Decision:
         equity_fraction = equity / 100.0
