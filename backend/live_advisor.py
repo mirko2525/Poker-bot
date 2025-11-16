@@ -8,7 +8,6 @@ basandosi su screenshot reali.
 """
 
 from pathlib import Path
-from typing import Optional
 import logging
 
 # Import moduli esistenti
