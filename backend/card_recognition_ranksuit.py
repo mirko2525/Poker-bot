@@ -207,10 +207,13 @@ def recognize_card_ranksuit(
         
         # Real cards have white pixels (sfondo bianco della carta)
         # Green table has <3% white pixels (solo riflessi/ombre)
-        # Threshold MOLTO abbassato per carte con bordi/ombre/angolazioni
-        if white_ratio < 0.03:
-            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.03)")
+        # SOGLIA ABBASSATA A 0.008 per carte con bordi/ombre/angolazioni
+        # La Fase 1 (slot detection) già filtra le posizioni vuote
+        if white_ratio < 0.008:
+            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.008)")
             return None, 0.0
+        else:
+            logger.debug(f"Card detected: white_ratio={white_ratio:.3f} (threshold: 0.008) ✓")
         
         # Extract regions from NORMALIZED card
         rank_region = extract_rank_region(normalized_card)
