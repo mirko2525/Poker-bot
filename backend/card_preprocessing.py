@@ -14,16 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 def remove_green_background(card_image: Image.Image, 
-                            green_threshold: int = 100) -> Image.Image:
+                            green_threshold: int = 50) -> Image.Image:
     """
     Rimuove lo sfondo verde del tavolo da poker, rendendolo bianco.
+    CONSERVA i simboli scuri della carta.
     
     Args:
         card_image: PIL Image della carta (RGB o RGBA)
-        green_threshold: Soglia per identificare il verde (default 100)
+        green_threshold: Soglia per identificare il verde (default 50)
     
     Returns:
-        PIL Image con sfondo bianco
+        PIL Image con sfondo bianco e simboli preservati
     """
     # Convert to RGB if needed
     if card_image.mode == 'RGBA':
@@ -35,25 +36,37 @@ def remove_green_background(card_image: Image.Image,
         return card_image
     
     # Convert to numpy
-    arr = np.array(rgb_image)
+    arr = np.array(rgb_image, dtype=np.uint8)
     
-    # Identify green background pixels
-    # Green channel is dominant: G > R and G > B
-    r = arr[:, :, 0]
-    g = arr[:, :, 1]
-    b = arr[:, :, 2]
+    r = arr[:, :, 0].astype(np.float32)
+    g = arr[:, :, 1].astype(np.float32)
+    b = arr[:, :, 2].astype(np.float32)
     
-    # Green mask: where green is dominant and above threshold
-    is_green = (g > r) & (g > b) & (g > green_threshold)
+    # Strategy: KEEP dark pixels (card symbols) and bright pixels (white card)
+    # REPLACE mid-range green pixels (table felt)
     
-    # Also detect very dark pixels (likely green felt)
-    is_dark = (r < 50) & (g < 100) & (b < 50)
+    # 1. Dark pixels (likely symbols) - KEEP
+    is_symbol = (r < 80) & (g < 80) & (b < 80)
     
-    # Combine masks
-    background_mask = is_green | is_dark
+    # 2. Bright pixels (likely white card) - KEEP  
+    # But need to whiten them more
+    is_bright = (r > 150) | (g > 150) | (b > 150)
+    
+    # 3. Green/dark background (table felt) - REPLACE
+    # Dark pixels where green is dominant
+    is_felt = (g > r + 20) & (g > b + 10) & (~is_symbol) & (~is_bright)
+    
+    # Also very dark pixels that aren't symbols
+    is_very_dark = (r < 30) & (g < 80) & (b < 30) & (~is_symbol)
+    
+    # Combine background masks
+    background_mask = is_felt | is_very_dark
     
     # Replace background with white
     arr[background_mask] = [255, 255, 255]
+    
+    # Brighten the "bright" pixels to make them pure white
+    arr[is_bright] = [255, 255, 255]
     
     # Convert back to PIL Image
     cleaned_image = Image.fromarray(arr)
