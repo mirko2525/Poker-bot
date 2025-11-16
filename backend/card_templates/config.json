@@ -7,10 +7,10 @@
     "total_cards": 5,
     "available_templates": [
       "3c",
-      "Ac",
       "2c",
+      "6d",
       "Ah",
-      "6d"
+      "Ac"
     ],
     "missing_cards": [
       "Ad",
