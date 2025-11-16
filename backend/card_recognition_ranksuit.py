@@ -195,8 +195,8 @@ def recognize_card_ranksuit(
         
         # Check for empty card position
         # Capo's info: carte hanno SFONDO BIANCO, tavolo verde NO white pixels
-        # Use image WITHOUT autocontrast for accurate white detection
-        card_no_contrast = normalize_card_image(card_image, use_autocontrast=False)
+        # Use image WITHOUT autocontrast AND isolation for accurate white detection
+        card_no_contrast = normalize_card_image(card_image, use_autocontrast=False, isolate_card=False)
         card_arr = np.array(card_no_contrast, dtype=np.float32)
         
         # Count WHITE pixels (carta = sfondo bianco)
