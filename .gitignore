@@ -86,3 +86,7 @@ backend/output_regions*/
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
