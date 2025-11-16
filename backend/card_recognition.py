@@ -112,17 +112,6 @@ def recognize_card(card_image: Image.Image,
             logger.debug(f"Empty card position detected (dark): brightness={mean_brightness:.1f}, std={brightness_std:.1f}")
             return None, 0.0
         
-        # Check for "border + empty" pattern: bright mean + low overall std + very low center std
-        # Real cards have detail/texture even if bright, empty positions are completely uniform
-        if mean_brightness > 200 and brightness_std < 85:
-            h, w = card_array_check.shape
-            center_region = card_array_check[h//4:3*h//4, w//4:3*w//4]
-            center_std = center_region.std()
-            # Only reject if center is COMPLETELY uniform (std < 5)
-            if center_std < 5:
-                logger.debug(f"Empty card position detected (uniform center): mean={mean_brightness:.1f}, center_std={center_std:.1f}")
-                return None, 0.0
-        
         # Normalize the input card
         card_array = normalize_card_for_recognition(card_image)
         
