@@ -200,8 +200,9 @@ def recognize_card_ranksuit(
         
         # Empty position detection (adjusted for green tables)
         # Cards with green background have brightness ~40-50
-        # Empty positions are very uniform (low std)
-        if brightness_std < 5:
+        # Empty positions are VERY uniform (extremely low std < 1)
+        # Real cards have some variation from rank/suit symbols
+        if brightness_std < 0.3:
             logger.debug(f"Empty position detected: brightness={mean_brightness:.1f}, std={brightness_std:.1f}")
             return None, 0.0
         
