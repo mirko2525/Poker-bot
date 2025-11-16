@@ -194,23 +194,21 @@ def recognize_card_ranksuit(
         normalized_card = normalize_card_image(card_image)
         
         # Check for empty card position
-        # Use ORIGINAL image without autocontrast for empty detection
-        card_original = normalize_card_image(card_image, use_autocontrast=False)
-        card_arr_orig = np.array(card_original, dtype=np.float32)
+        # Capo's info: carte hanno SFONDO BIANCO, tavolo verde NO white pixels
+        # Use image WITHOUT autocontrast for accurate white detection
+        card_no_contrast = normalize_card_image(card_image, use_autocontrast=False)
+        card_arr = np.array(card_no_contrast, dtype=np.float32)
         
-        # Real cards have white background (brightness > 180 without autocontrast)
-        # Green table has uniform low brightness (40-60)
-        white_pixels = np.sum(card_arr_orig > 180)
-        total_pixels = card_arr_orig.size
+        # Count WHITE pixels (carta = sfondo bianco)
+        # White = brightness > 200 (out of 255)
+        white_pixels = np.sum(card_arr > 200)
+        total_pixels = card_arr.size
         white_ratio = white_pixels / total_pixels
         
-        # Also check brightness uniformity (tavolo verde è uniforme)
-        brightness_mean = card_arr_orig.mean()
-        brightness_std = card_arr_orig.std()
-        
-        # Empty if: very few white pixels AND low variance (uniform green table)
-        if white_ratio < 0.10 and brightness_std < 15:
-            logger.debug(f"Empty position: white_ratio={white_ratio:.3f}, brightness={brightness_mean:.1f}, std={brightness_std:.1f}")
+        # Real cards have >20% white pixels (sfondo bianco della carta)
+        # Green table has <5% white pixels (solo riflessi/ombre)
+        if white_ratio < 0.15:
+            logger.debug(f"Empty position: white_ratio={white_ratio:.3f} (threshold: 0.15)")
             return None, 0.0
         
         # Extract regions from NORMALIZED card
