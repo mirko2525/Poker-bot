@@ -306,7 +306,7 @@ class DecisionEngine:
         hero_stack_bb = hand_state.hero_stack / hand_state.big_blind
         
         # Check for short stack all-in situation
-        if hero_stack_bb < self.allin_stack_bb_threshold and equity_fraction > 0.55:
+        if hero_stack_bb < self.allin_stack_bb_threshold and equity_fraction > self.high_equity_for_allin:
             return Decision(
                 action="RAISE",
                 raise_amount=hand_state.hero_stack,
