@@ -207,6 +207,21 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ PASSED: All API endpoints working correctly. /api/poker/demo/start returns 200 OK, /api/poker/demo/next returns proper hand data with hand_state (hero_cards, board_cards, pot_size, etc.) and decision (action, equity, reason). Mock data includes 6 different poker scenarios with equity calculations 10-95% as expected."
+        - working: true
+          agent: "testing"
+          comment: "✅ PHASE 2 VERIFIED: Backend successfully updated to provide 8 hands instead of 6. New mock data includes diverse scenarios: strong preflop (As Ad), marginal preflop (Kh Jd), top pair (Ah Ks), flush draws (9h 8h), completed straights (Qh Jd), weak river hands (2h 7c), short stack situations (Jh Jc with 8.5 BB), and borderline equity spots (Tc 9c). Configurable constants from poker_config.py working correctly. Decision logic properly handles different stack sizes, pot odds calculations, and equity thresholds."
+
+  - task: "Phase 2 Configurable Constants Integration"
+    implemented: true
+    working: true
+    file: "/app/backend/poker_config.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: poker_config.py successfully integrated with DecisionEngine. Configurable constants working: MARGIN (0.05), STRONG_EQUITY_THRESHOLD (0.65), ALLIN_STACK_BB_THRESHOLD (10), SHORT_STACK_BORDERLINE_BB (20), HIGH_EQUITY_FOR_ALLIN (0.55), RAISE_POT_MULTIPLIER (0.75), RAISE_NO_COST_MULTIPLIER (0.5). Decision logic correctly uses these parameters for pot odds comparisons, raise sizing, and all-in decisions."
 
 metadata:
   created_by: "testing_agent"
