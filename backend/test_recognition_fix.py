@@ -31,11 +31,17 @@ def test_screenshot_recognition(screenshot_path: str):
     
     # Room config PokerStars (Dresda III)
     room_config = {
-        'board_zone': {
-            'x': 985,
-            'y': 793, 
-            'w': 1084,
-            'h': 380
+        'zones': {
+            'board_row': {
+                'x': 985,
+                'y': 793, 
+                'width': 1084,
+                'height': 380
+            }
+        },
+        'detection_params': {
+            'max_board_cards': 5,
+            'card_white_threshold': 0.08  # Abbassato per testare
         }
     }
     
