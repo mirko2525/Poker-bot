@@ -36,9 +36,9 @@ RANK_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~29px
 
 # Suit region coordinates (top-left corner, below rank)
 SUIT_X = 0
-SUIT_Y = int(CARD_HEIGHT * 0.20)  # ~24px
-SUIT_WIDTH = int(CARD_WIDTH * 0.35)  # ~31px
-SUIT_HEIGHT = int(CARD_HEIGHT * 0.254)  # ~30px (adjusted to match template height)
+SUIT_Y = 24  # Start below rank
+SUIT_WIDTH = 31  # Match template width exactly
+SUIT_HEIGHT = 30  # Match template height exactly
 
 
 def load_rank_templates(ranks_dir: str = "card_templates/ranks") -> Dict[str, np.ndarray]:
