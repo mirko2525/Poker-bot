@@ -51,4 +51,40 @@ def test_alignment():
         # Console logic
         console_hand = console_provider.get_next_mock_hand()
         console_equity = console_equity_engine.compute_equity(console_hand)
-        console_decision = console_decision_engine.decide_action(console_hand, console_equity)\n        \n        # Web API logic\n        try:\n            api_response = requests.get(\"http://localhost:8001/api/poker/demo/next\")\n            api_data = api_response.json()\n            \n            web_hand = api_data['hand_state']\n            web_decision = api_data['decision']\n            \n            # Confronta dati hand state\n            hand_match = (\n                console_hand.hero_cards == web_hand['hero_cards'] and\n                console_hand.board_cards == web_hand['board_cards'] and\n                console_hand.phase == web_hand['phase'] and\n                console_hand.pot_size == web_hand['pot_size']\n            )\n            \n            # Confronta decisioni (azione e importo raise)\n            decision_match = (\n                console_decision.action == web_decision['action'] and\n                abs(console_decision.raise_amount - web_decision['raise_amount']) < 0.01\n            )\n            \n            if hand_match and decision_match:\n                print(f\"✅ ALLINEATO: {console_hand.phase} {' '.join(console_hand.hero_cards)} → {console_decision.action}\")\n            else:\n                print(f\"❌ DISALLINEATO:\")\n                if not hand_match:\n                    print(f\"   Hand State: Console={console_hand.hero_cards} vs Web={web_hand['hero_cards']}\")\n                if not decision_match:\n                    print(f\"   Decisione: Console={console_decision.action}({console_decision.raise_amount:.2f}) vs Web={web_decision['action']}({web_decision['raise_amount']:.2f})\")\n                mismatches += 1\n            \n        except Exception as e:\n            print(f\"❌ Errore API: {e}\")\n            mismatches += 1\n    \n    print()\n    print(\"=\"*60)\n    print(\"RISULTATI TEST ALLINEAMENTO\")\n    print(\"=\"*60)\n    \n    if mismatches == 0:\n        print(f\"🎉 SUCCESSO COMPLETO: Tutti i {total_hands} confronti sono allineati!\")\n        print(\"📋 Console Demo e Web Demo usano esattamente la stessa logica backend.\")\n        print(\"✅ Fase 2 - Requisito Allineamento: SUPERATO\")\n    else:\n        print(f\"⚠️  ATTENZIONE: {mismatches}/{total_hands} mani disallineate\")\n        print(\"🔧 Richiedono revisione della sincronizzazione logica.\")\n    \n    print()\n\n\nif __name__ == \"__main__\":\n    test_alignment()"
+        console_decision = console_decision_engine.decide_action(console_hand, console_equity)
+        
+        # Web API logic
+        try:
+            api_response = requests.get("http://localhost:8001/api/poker/demo/next")
+            api_data = api_response.json()
+            
+            web_hand = api_data['hand_state']
+            web_decision = api_data['decision']
+            
+            # Confronta dati hand state
+            hand_match = (
+                console_hand.hero_cards == web_hand['hero_cards'] and
+                console_hand.board_cards == web_hand['board_cards'] and
+                console_hand.phase == web_hand['phase'] and
+                console_hand.pot_size == web_hand['pot_size']
+            )
+            
+            # Confronta decisioni (azione e importo raise)
+            decision_match = (
+                console_decision.action == web_decision['action'] and
+                abs(console_decision.raise_amount - web_decision['raise_amount']) < 0.01
+            )
+            
+            if hand_match and decision_match:
+                print(f"✅ ALLINEATO: {console_hand.phase} {' '.join(console_hand.hero_cards)} → {console_decision.action}")
+            else:
+                print(f"❌ DISALLINEATO:")
+                if not hand_match:
+                    print(f"   Hand State: Console={console_hand.hero_cards} vs Web={web_hand['hero_cards']}")
+                if not decision_match:
+                    print(f"   Decisione: Console={console_decision.action}({console_decision.raise_amount:.2f}) vs Web={web_decision['action']}({web_decision['raise_amount']:.2f})")
+                mismatches += 1
+            
+        except Exception as e:
+            print(f"❌ Errore API: {e}")
+            mismatches += 1\n    \n    print()\n    print(\"=\"*60)\n    print(\"RISULTATI TEST ALLINEAMENTO\")\n    print(\"=\"*60)\n    \n    if mismatches == 0:\n        print(f\"🎉 SUCCESSO COMPLETO: Tutti i {total_hands} confronti sono allineati!\")\n        print(\"📋 Console Demo e Web Demo usano esattamente la stessa logica backend.\")\n        print(\"✅ Fase 2 - Requisito Allineamento: SUPERATO\")\n    else:\n        print(f\"⚠️  ATTENZIONE: {mismatches}/{total_hands} mani disallineate\")\n        print(\"🔧 Richiedono revisione della sincronizzazione logica.\")\n    \n    print()\n\n\nif __name__ == \"__main__\":\n    test_alignment()"
