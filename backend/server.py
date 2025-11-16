@@ -355,7 +355,7 @@ class DecisionEngine:
                     pot_odds=pot_odds * 100
                 )
             else:
-                raise_amount = min(hand_state.hero_stack, hand_state.pot_size * 0.75)
+                raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_pot_multiplier)
                 return Decision(
                     action="RAISE",
                     raise_amount=raise_amount,
