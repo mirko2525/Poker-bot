@@ -20,10 +20,10 @@
   },
   
   "detection_params": {
-    "card_min_area": 5000,
-    "card_max_area": 20000,
-    "card_min_aspect_ratio": 1.0,
-    "card_max_aspect_ratio": 1.6,
+    "card_min_area": 10000,
+    "card_max_area": 25000,
+    "card_min_aspect_ratio": 0.4,
+    "card_max_aspect_ratio": 0.7,
     "max_board_cards": 5,
     "max_hero_cards": 2
   }
