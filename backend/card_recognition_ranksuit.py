@@ -38,7 +38,7 @@ RANK_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~29px
 SUIT_X = 0
 SUIT_Y = int(CARD_HEIGHT * 0.20)  # ~24px
 SUIT_WIDTH = int(CARD_WIDTH * 0.35)  # ~31px
-SUIT_HEIGHT = int(CARD_HEIGHT * 0.25)  # ~30px
+SUIT_HEIGHT = int(CARD_HEIGHT * 0.254)  # ~30px (adjusted to match template height)
 
 
 def load_rank_templates(ranks_dir: str = "card_templates/ranks") -> Dict[str, np.ndarray]:
