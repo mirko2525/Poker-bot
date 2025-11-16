@@ -17,6 +17,39 @@ logger = logging.getLogger(__name__)
 CARD_TEMPLATE_WIDTH = 89
 CARD_TEMPLATE_HEIGHT = 118
 
+# ============================================================================
+# SINGLE SOURCE OF TRUTH - Template & Recognition Normalization
+# ============================================================================
+
+def normalize_card_for_template(img: Image.Image) -> Image.Image:
+    """
+    🎯 PIPELINE UNICA per template generation E live recognition.
+    
+    ORDINE DEL CAPO FASE 6.2:
+    - Questa funzione DEVE essere usata:
+      1. Quando crei i template rank/suit
+      2. Quando riconosci le carte live
+    
+    Pipeline:
+    - Grayscale
+    - Resize a dimensioni standard (89x118)
+    - Autocontrast=True (leggero)
+    - NO isolate_card (carte già estratte pulite da geometric)
+    
+    Args:
+        img: PIL Image della carta estratta da board_detector_geometric
+        
+    Returns:
+        PIL Image normalizzata (L mode, 89x118px)
+    """
+    return normalize_card_image(
+        img,
+        target_width=CARD_TEMPLATE_WIDTH,
+        target_height=CARD_TEMPLATE_HEIGHT,
+        use_autocontrast=True,
+        isolate_card=False  # Carte già pulite da geometric detection
+    )
+
 
 def normalize_card_image(card_image: Image.Image,
                         target_width: int = CARD_TEMPLATE_WIDTH,
