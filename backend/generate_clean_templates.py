@@ -32,15 +32,15 @@ logger = logging.getLogger(__name__)
 KNOWN_CARDS = {
     "pokerstars_flop.png": {
         "phase": "FLOP",
-        "cards": ["4d", "7c", "Kd"]  # slot 1, 2, 3
+        "cards": ["6d", "Ah", "2c"]  # slot 1, 2, 3
     },
     "pokerstars_turn.png": {
         "phase": "TURN", 
-        "cards": ["4d", "7c", "Kd", "Ah"]  # slot 1, 2, 3, 4
+        "cards": ["Ah", "?", "?", "?"]  # slot 1, 2, 3, 4 - DA IDENTIFICARE MANUALMENTE
     },
     "pokerstars_river.png": {
         "phase": "RIVER",
-        "cards": ["9s", "4d", "7c", "Kd", "Ah"]  # slot 0, 1, 2, 3, 4
+        "cards": ["?", "?", "?", "?", "?"]  # slot 0, 1, 2, 3, 4 - DA IDENTIFICARE MANUALMENTE
     },
 }
 
