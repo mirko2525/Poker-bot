@@ -425,7 +425,7 @@ class DecisionEngine:
                 return Decision(
                     action="RAISE",
                     raise_amount=raise_amount,
-                    reason=f"Strong equity ({equity:.1f}%) - raise for value",
+                    reason=f"Strong equity ({equity*100:.1f}%) - raise for value",
                     equity=equity,
                     pot_odds=pot_odds * 100
                 )
