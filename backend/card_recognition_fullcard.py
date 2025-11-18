@@ -270,10 +270,18 @@ if __name__ == "__main__":
         # Load image
         img = cv2.imread(test_file)
         
-        # Recognize
-        code, score = recognizer.recognize_card(img)
+        # Recognize con nuova API (tripla)
+        code, score, conf = recognizer.recognize_card(img)
         
-        print(f"📸 {test_file:15s} → {code or 'None':3s} (score: {score:.3f})")
+        # Emoji per confidenza
+        if conf == "strong":
+            emoji = "✅"
+        elif conf == "weak":
+            emoji = "⚠️"
+        else:
+            emoji = "❌"
+        
+        print(f"{emoji} {test_file:15s} → {code or 'None':3s} (score: {score:.3f}, conf: {conf})")
     
     print("\n" + "="*80)
     print("✅ TEST COMPLETATO")
