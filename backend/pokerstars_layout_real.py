@@ -17,6 +17,12 @@ le coordinate vengono scalate automaticamente rispetto alla risoluzione base.
 import cv2
 from typing import Dict, List, Tuple
 from card_recognition_fullcard import FullCardRecognizer
+from card_recognition_ranksuit import (
+    load_rank_templates,
+    load_suit_templates,
+    recognize_card_ranksuit,
+)
+from PIL import Image
 
 # Risoluzione base per cui sono state misurate le coordinate
 BASE_WIDTH = 2048
