@@ -144,9 +144,33 @@ def recognize_table_cards(
     }
 
     # Recognize hero cards
-    # Hero2 (carta davanti) con full-card recognizer
     if layout.hero_cards:
-        # hero2 è la seconda bbox nella lista
+        # HERO1 (carta dietro): usiamo bbox full-card ma riconoscimento rank+suit
+        x1, y1, w1, h1 = layout.hero_cards[0]
+        sx1, sy1, sw1, sh1 = _scale_bbox((x1, y1, w1, h1), scale_x, scale_y, w, h)
+        hero1_code = None
+        hero1_score = 0.0
+        hero1_conf = "none"
+
+        hero1_bgr = screen_bgr[sy1:sy1 + sh1, sx1:sx1 + sw1]
+        if hero1_bgr.size > 0 and _RANK_TEMPLATES and _SUIT_TEMPLATES:
+            hero1_pil = Image.fromarray(cv2.cvtColor(hero1_bgr, cv2.COLOR_BGR2RGB))
+            code, conf = recognize_card_ranksuit(hero1_pil, _RANK_TEMPLATES, _SUIT_TEMPLATES)
+            if code is not None:
+                hero1_code = code
+                hero1_score = conf
+                hero1_conf = "strong" if conf >= 0.75 else "weak"
+
+        results["hero"].append(
+            {
+                "code": hero1_code,
+                "score": hero1_score,
+                "conf": hero1_conf,
+                "bbox": (sx1, sy1, sw1, sh1),
+            }
+        )
+
+        # HERO2 (carta davanti) con full-card recognizer
         if len(layout.hero_cards) > 1:
             x2, y2, w2, h2 = layout.hero_cards[1]
             sx2, sy2, sw2, sh2 = _scale_bbox((x2, y2, w2, h2), scale_x, scale_y, w, h)
@@ -157,40 +181,6 @@ def recognize_table_cards(
             score2 = 0.0
             conf2 = "none"
 
-        # Hero1 (carta dietro) solo angolino rank+suit
-        fx, fy, fw, fh = layout.hero1_corner_frac
-        corner_x = int(round(fx * w))
-        corner_y = int(round(fy * h))
-        corner_w = int(round(fw * w))
-        corner_h = int(round(fh * h))
-        corner_x, corner_y, corner_w, corner_h = _scale_bbox(
-            (corner_x, corner_y, corner_w, corner_h), 1.0, 1.0, w, h
-        )
-
-        corner_bgr = screen_bgr[corner_y:corner_y + corner_h, corner_x:corner_x + corner_w]
-        hero1_code = None
-        hero1_score = 0.0
-        hero1_conf = "none"
-        if corner_bgr.size > 0 and _RANK_TEMPLATES and _SUIT_TEMPLATES:
-            # convert to PIL Image
-            corner_pil = Image.fromarray(cv2.cvtColor(corner_bgr, cv2.COLOR_BGR2RGB))
-            code, conf = recognize_card_ranksuit(corner_pil, _RANK_TEMPLATES, _SUIT_TEMPLATES)
-            if code is not None:
-                hero1_code = code
-                hero1_score = conf
-                hero1_conf = "strong" if conf >= 0.75 else "weak"
-
-        # Hero1
-        results["hero"].append(
-            {
-                "code": hero1_code,
-                "score": hero1_score,
-                "conf": hero1_conf,
-                "bbox": (corner_x, corner_y, corner_w, corner_h),
-            }
-        )
-
-        # Hero2
         results["hero"].append(
             {
                 "code": code2,
