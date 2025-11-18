@@ -638,6 +638,33 @@ async def update_table_cards_once() -> None:
 
         # Salva crop hero per debug (hero_1.png, hero_2.png)
         try:
+@api_router.post("/table/{table_id}/screenshot", response_model=TableCardsResponse)
+async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)) -> TableCardsResponse:
+    """Carica uno screenshot tavolo, aggiorna il riconoscimento e ritorna le carte.
+
+    Flusso:
+    - Salva il file caricato come table1.png sotto data/screens
+    - Chiama subito update_table_cards_once()
+    - Ritorna la risposta TableCardsResponse aggiornata
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+
+    if file.content_type not in ("image/png", "image/jpeg", "image/jpg"):
+        raise HTTPException(status_code=400, detail="File must be PNG or JPEG")
+
+    # Salva il file come TABLE_SCREEN_PATH
+    TABLE_SCREEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    contents = await file.read()
+    with open(TABLE_SCREEN_PATH, "wb") as f:
+        f.write(contents)
+
+    # Aggiorna subito il riconoscimento (niente attesa watcher)
+    await update_table_cards_once()
+
+    return build_table_cards_response(table_id)
+
+
             debug_dir = ROOT_DIR / "data" / "screens"
             debug_dir.mkdir(parents=True, exist_ok=True)
             for i, card in enumerate(recognition.get("hero", [])):
