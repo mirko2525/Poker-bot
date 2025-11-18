@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from './components/ui/button';
@@ -24,6 +24,7 @@ const PokerBotDemo = () => {
   // Table recognition state
   const [tableCards, setTableCards] = useState(null);
   const [isTableLoading, setIsTableLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const startDemo = async () => {
     try {
@@ -80,6 +81,36 @@ const PokerBotDemo = () => {
       toast.error('Failed to fetch table cards');
     } finally {
       setIsTableLoading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setIsTableLoading(true);
+      const response = await axios.post(`${API}/table/1/screenshot`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setTableCards(response.data);
+      toast.success('Screenshot uploaded & cards updated');
+    } catch (error) {
+      console.error('Error uploading screenshot:', error);
+      toast.error('Failed to upload screenshot');
+    } finally {
+      setIsTableLoading(false);
+      // reset per permettere di ricaricare lo stesso file
+      event.target.value = '';
     }
   };
 
@@ -325,13 +356,30 @@ const PokerBotDemo = () => {
                       {formatCardsLine(tableCards?.board)}
                     </div>
                   </div>
-                  <Button 
-                    onClick={fetchTableCards}
-                    disabled={isTableLoading}
-                    className="w-full mt-2"
-                  >
-                    {isTableLoading ? 'Loading...' : 'Fetch Table Cards'}
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      onClick={fetchTableCards}
+                      disabled={isTableLoading}
+                      className="w-1/2"
+                    >
+                      {isTableLoading ? 'Loading...' : 'Fetch Table Cards'}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleUploadClick}
+                      disabled={isTableLoading}
+                      className="w-1/2"
+                    >
+                      Upload Screenshot
+                    </Button>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </CardContent>
               </Card>
             </div>
