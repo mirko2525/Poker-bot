@@ -185,25 +185,24 @@ class FullCardRecognizer:
         
         return best_code, best_score, conf
     
-    def recognize_multiple(
-        self,
-        card_crops: list,
-        threshold: float = MATCH_THRESHOLD
-    ) -> list:
+    def recognize_multiple(self, card_crops: list) -> list:
         """
         Riconosce multiple carte.
         
         Args:
             card_crops: Lista di crop di carte
-            threshold: Score minimo
             
         Returns:
-            Lista di (card_code, score)
+            Lista di dict {"code": str, "score": float, "conf": str}
         """
         results = []
         for crop in card_crops:
-            code, score = self.recognize_card(crop, threshold)
-            results.append((code, score))
+            code, score, conf = self.recognize_card(crop)
+            results.append({
+                "code": code,
+                "score": score,
+                "conf": conf
+            })
         return results
 
 
