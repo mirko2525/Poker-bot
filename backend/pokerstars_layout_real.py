@@ -5,32 +5,38 @@ POKERSTARS LAYOUT - COORDINATE REALI
 
 ORDINE CAPO: Coordinate estratte da screenshot PokerStars reali.
 
-Risoluzione: 2048×1279 (screenshot browser PokerStars)
+Risoluzione base: 2048×1279 (screenshot browser PokerStars)
 Origine: top-left (0,0)
 
 Formato: (x, y, w, h) in pixel
+
+NOTA: Se lo screenshot reale ha una risoluzione diversa ma stesso aspect ratio,
+le coordinate vengono scalate automaticamente rispetto alla risoluzione base.
 """
 
 import cv2
 from typing import Dict, List, Tuple
 from card_recognition_fullcard import FullCardRecognizer
 
+# Risoluzione base per cui sono state misurate le coordinate
+BASE_WIDTH = 2048
+BASE_HEIGHT = 1279
+
 
 class PokerStarsLayout2048x1279:
-    """
-    Layout REALE per PokerStars screenshot 2048×1279.
-    
+    """Layout REALE per PokerStars screenshot 2048×1279.
+
     ORDINE CAPO: Coordinate misurate da screenshot live.
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         # Hero cards (2 carte in basso)
         # Ordine: sinistra → destra
         self.hero_cards = [
             (772, 838, 132, 188),   # hero[0] - carta sinistra
             (815, 850, 133, 189),   # hero[1] - carta destra
         ]
-        
+
         # Board cards (5 carte al centro)
         # Ordine: sinistra → destra
         self.board_cards = [
@@ -42,19 +48,48 @@ class PokerStarsLayout2048x1279:
         ]
 
 
+def _scale_bbox(
+    bbox: Tuple[int, int, int, int],
+    scale_x: float,
+    scale_y: float,
+    max_w: int,
+    max_h: int,
+) -> Tuple[int, int, int, int]:
+    """Scala una bbox dalla risoluzione base a quella reale dello screenshot.
+
+    Mantiene la bbox entro i limiti dell'immagine.
+    """
+    x, y, w, h = bbox
+
+    x = int(round(x * scale_x))
+    y = int(round(y * scale_y))
+    w = int(round(w * scale_x))
+    h = int(round(h * scale_y))
+
+    # Clamping sui limiti immagine
+    x = max(0, min(x, max_w - 1))
+    y = max(0, min(y, max_h - 1))
+    w = max(1, min(w, max_w - x))
+    h = max(1, min(h, max_h - y))
+
+    return x, y, w, h
+
+
 def recognize_table_cards(
     screen_bgr,
     layout: PokerStarsLayout2048x1279,
-    recognizer: FullCardRecognizer
+    recognizer: FullCardRecognizer,
 ) -> Dict:
-    """
-    ORDINE CAPO: Riconosce tutte le 7 carte da screenshot tavolo.
-    
+    """ORDINE CAPO: Riconosce tutte le 7 carte da screenshot tavolo.
+
     Args:
-        screen_bgr: Screenshot BGR del tavolo
-        layout: Layout con coordinate
+        screen_bgr: Screenshot BGR del tavolo (qualsiasi risoluzione)
+        layout: Layout con coordinate misurate su 2048×1279
         recognizer: FullCardRecognizer inizializzato
-        
+
+    La funzione adatta automaticamente le coordinate se lo screenshot
+    non è esattamente 2048×1279 ma mantiene lo stesso aspect ratio.
+
     Returns:
         {
             "hero": [
@@ -69,62 +104,72 @@ def recognize_table_cards(
     """
     # Convert to grayscale
     gray = cv2.cvtColor(screen_bgr, cv2.COLOR_BGR2GRAY)
-    
-    def crop_and_recognize(x, y, w, h):
+    h, w = gray.shape[:2]
+
+    # Fattori di scala rispetto alla risoluzione base
+    scale_x = w / BASE_WIDTH
+    scale_y = h / BASE_HEIGHT
+
+    def crop_and_recognize(x: int, y: int, w_box: int, h_box: int):
         """Helper: crop + recognize"""
-        crop = gray[y:y+h, x:x+w]
+        crop = gray[y:y + h_box, x:x + w_box]
         return recognizer.recognize_card(crop)
-    
-    results = {
+
+    results: Dict[str, List[Dict]] = {
         "hero": [],
-        "board": []
+        "board": [],
     }
-    
-    # Recognize hero cards
-    for (x, y, w, h) in layout.hero_cards:
-        code, score, conf = crop_and_recognize(x, y, w, h)
-        results["hero"].append({
-            "code": code,
-            "score": score,
-            "conf": conf,
-            "bbox": (x, y, w, h),
-        })
-    
-    # Recognize board cards
-    for (x, y, w, h) in layout.board_cards:
-        code, score, conf = crop_and_recognize(x, y, w, h)
-        results["board"].append({
-            "code": code,
-            "score": score,
-            "conf": conf,
-            "bbox": (x, y, w, h),
-        })
-    
+
+    # Recognize hero cards (verde nel debug overlay)
+    for (x, y, w_box, h_box) in layout.hero_cards:
+        sx, sy, sw, sh = _scale_bbox((x, y, w_box, h_box), scale_x, scale_y, w, h)
+        code, score, conf = crop_and_recognize(sx, sy, sw, sh)
+        results["hero"].append(
+            {
+                "code": code,
+                "score": score,
+                "conf": conf,
+                "bbox": (sx, sy, sw, sh),
+            }
+        )
+
+    # Recognize board cards (blu nel debug overlay)
+    for (x, y, w_box, h_box) in layout.board_cards:
+        sx, sy, sw, sh = _scale_bbox((x, y, w_box, h_box), scale_x, scale_y, w, h)
+        code, score, conf = crop_and_recognize(sx, sy, sw, sh)
+        results["board"].append(
+            {
+                "code": code,
+                "score": score,
+                "conf": conf,
+                "bbox": (sx, sy, sw, sh),
+            }
+        )
+
     return results
 
 
 def visualize_recognition(
     screen_bgr,
     results: Dict,
-    output_path: str = None
+    output_path: str | None = None,
 ):
-    """
-    Visualizza risultati riconoscimento su screenshot.
-    
+    """Visualizza risultati riconoscimento su screenshot.
+
     Args:
         screen_bgr: Screenshot originale
         results: Output di recognize_table_cards()
         output_path: Dove salvare (opzionale)
     """
     vis = screen_bgr.copy()
-    
+
     # Hero cards (verde)
     for i, card in enumerate(results["hero"]):
-        x, y, w, h = card["bbox"]
+        x, y, w_box, h_box = card["bbox"]
         code = card["code"] or "???"
         conf = card["conf"]
         score = card["score"]
-        
+
         # Colore box basato su confidenza
         if conf == "strong":
             color = (0, 255, 0)  # Verde
@@ -132,21 +177,28 @@ def visualize_recognition(
             color = (0, 255, 255)  # Giallo
         else:
             color = (0, 0, 255)  # Rosso
-        
-        cv2.rectangle(vis, (x, y), (x+w, y+h), color, 3)
-        
+
+        cv2.rectangle(vis, (x, y), (x + w_box, y + h_box), color, 3)
+
         # Label
         label = f"H{i+1}: {code} ({score:.2f})"
-        cv2.putText(vis, label, (x, y-10),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-    
+        cv2.putText(
+            vis,
+            label,
+            (x, y - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            color,
+            2,
+        )
+
     # Board cards (cyan)
     for i, card in enumerate(results["board"]):
-        x, y, w, h = card["bbox"]
+        x, y, w_box, h_box = card["bbox"]
         code = card["code"] or "???"
         conf = card["conf"]
         score = card["score"]
-        
+
         # Colore box basato su confidenza
         if conf == "strong":
             color = (255, 255, 0)  # Cyan
@@ -154,17 +206,24 @@ def visualize_recognition(
             color = (0, 255, 255)  # Giallo
         else:
             color = (0, 0, 255)  # Rosso
-        
-        cv2.rectangle(vis, (x, y), (x+w, y+h), color, 3)
-        
+
+        cv2.rectangle(vis, (x, y), (x + w_box, y + h_box), color, 3)
+
         # Label
         label = f"B{i+1}: {code} ({score:.2f})"
-        cv2.putText(vis, label, (x, y-10),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-    
+        cv2.putText(
+            vis,
+            label,
+            (x, y - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            color,
+            2,
+        )
+
     if output_path:
         cv2.imwrite(output_path, vis)
-    
+
     return vis
 
 
@@ -173,20 +232,48 @@ def visualize_recognition(
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
-    print("🎯 POKERSTARS LAYOUT - COORDINATE REALI")
-    print("="*80 + "\n")
-    
+    import sys
+    from pathlib import Path
+
+    print("\n" + "=" * 80)
+    print("🎯 POKERSTARS LAYOUT - COORDINATE REALI (SCALING TEST)")
+    print("=" * 80 + "\n")
+
     layout = PokerStarsLayout2048x1279()
-    
+
     print(f"Hero cards: {len(layout.hero_cards)}")
-    for i, (x, y, w, h) in enumerate(layout.hero_cards):
-        print(f"  H{i+1}: x={x:4d} y={y:4d} w={w:3d} h={h:3d}")
-    
+    for i, (x, y, w_box, h_box) in enumerate(layout.hero_cards):
+        print(f"  H{i+1}: x={x:4d} y={y:4d} w={w_box:3d} h={h_box:3d}")
+
     print(f"\nBoard cards: {len(layout.board_cards)}")
-    for i, (x, y, w, h) in enumerate(layout.board_cards):
-        print(f"  B{i+1}: x={x:4d} y={y:4d} w={w:3d} h={h:3d}")
-    
-    print("\n" + "="*80)
-    print("✅ Layout pronto per tavolo vero!")
-    print("="*80 + "\n")
+    for i, (x, y, w_box, h_box) in enumerate(layout.board_cards):
+        print(f"  B{i+1}: x={x:4d} y={y:4d} w={w_box:3d} h={h_box:3d}")
+
+    # Test rapido opzionale con uno screenshot se passato da CLI
+    if len(sys.argv) > 1:
+        img_path = Path(sys.argv[1])
+        print(f"\nLoading screenshot: {img_path}")
+        img = cv2.imread(str(img_path))
+        if img is None:
+            print("❌ Cannot read image")
+            sys.exit(1)
+
+        rec = FullCardRecognizer()
+        if not rec.templates:
+            print("❌ No templates loaded")
+            sys.exit(1)
+
+        res = recognize_table_cards(img, layout, rec)
+        print("\nHERO:")
+        for c in res["hero"]:
+            print(c)
+        print("\nBOARD:")
+        for c in res["board"]:
+            print(c)
+
+        out = visualize_recognition(img, res, "debug_pokerstars_layout.png")
+        print("\n✅ Saved debug overlay: debug_pokerstars_layout.png")
+
+    print("\n" + "=" * 80)
+    print("✅ Layout pronto per tavolo vero (con scaling)!" )
+    print("=" * 80 + "\n")
