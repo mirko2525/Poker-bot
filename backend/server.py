@@ -580,6 +580,21 @@ async def update_table_cards_once() -> None:
             board_codes,
         )
 
+        # Salva crop hero per debug (hero_1.png, hero_2.png)
+        try:
+            debug_dir = ROOT_DIR / "data" / "screens"
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            for i, card in enumerate(recognition.get("hero", [])):
+                bbox = card.get("bbox")
+                if not bbox:
+                    continue
+                x, y, w_box, h_box = bbox
+                crop = screen_bgr[y:y + h_box, x:x + w_box]
+                hero_path = debug_dir / f"hero_{i+1}.png"
+                cv2.imwrite(str(hero_path), crop)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Failed to save hero crops: %s", exc)
+
         # Salva overlay di debug
         try:
             save_table_debug_overlay(screen_bgr, recognition, TABLE_DEBUG_PATH)
