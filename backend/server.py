@@ -73,6 +73,7 @@ class RecognizedCard(BaseModel):
 class TableCardsResponse(BaseModel):
     table_id: str
     image_path: str
+    debug_image_path: Optional[str] = None
     updated_at: Optional[datetime]
     status: str  # ok | pending | no_image | error
     hero: List[RecognizedCard]
@@ -474,6 +475,7 @@ decision_engine = DecisionEngine()
 
 # Initialize table recognition components (Fase tavolo reale)
 TABLE_SCREEN_PATH = ROOT_DIR / "data" / "screens" / "table1.png"
+TABLE_DEBUG_PATH = ROOT_DIR / "data" / "screens" / "table1_debug.png"
 TABLE_LAYOUT = PokerStarsLayout2048x1279()
 CARD_RECOGNIZER = FullCardRecognizer()
 
@@ -485,57 +487,112 @@ TABLE_STATE: Dict[str, Any] = {
 }
 
 
+def save_table_debug_overlay(screen_bgr, recognition: Dict[str, Any], out_path: Path) -> None:
+    """Disegna rettangoli su hero/board + codice/conf/score e salva PNG di debug."""
+    debug = screen_bgr.copy()
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    def draw_group(cards, color):
+        for c in cards:
+            bbox = c.get("bbox")
+            if not bbox:
+                continue
+
+            code = c.get("code") or "??"
+            conf = c.get("conf") or "none"
+            score = c.get("score", 0.0)
+            try:
+                score_f = float(score)
+            except (TypeError, ValueError):
+                score_f = 0.0
+
+            x, y, w, h = bbox
+
+            # rettangolo
+            cv2.rectangle(
+                debug,
+                (int(x), int(y)),
+                (int(x + w), int(y + h)),
+                color,
+                2,
+            )
+
+            # etichetta sopra la carta
+            label = f"{code} {conf} {score_f:.2f}"
+            text_scale = 0.5
+            text_thickness = 1
+
+            (tw, th), _ = cv2.getTextSize(label, font, text_scale, text_thickness)
+            text_x = int(x)
+            text_y = int(y) - 5
+            if text_y - th < 0:
+                text_y = int(y + h + th + 5)
+
+            cv2.putText(
+                debug,
+                label,
+                (text_x, text_y),
+                font,
+                text_scale,
+                color,
+                text_thickness,
+                cv2.LINE_AA,
+            )
+
+    # Hero in verde, board in blu
+    draw_group(recognition.get("hero", []), (0, 255, 0))
+    draw_group(recognition.get("board", []), (255, 0, 0))
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(out_path), debug)
+
+
 async def update_table_cards_once() -> None:
     """Legge lo screenshot del tavolo e aggiorna TABLE_STATE.
 
     Usa le coordinate reali PokerStars (2048×1279) e il FullCardRecognizer
     per riconoscere le 7 carte (2 hero + 5 board).
     """
-    global TABLE_STATE
-
     if not TABLE_SCREEN_PATH.exists():
         msg = f"Screenshot file not found: {TABLE_SCREEN_PATH}"
-        logging.getLogger(__name__).warning(msg)
-        TABLE_STATE = {
-            "result": None,
-            "error": msg,
-            "updated_at": None,
-        }
+        logger.warning(msg)
+        TABLE_STATE["result"] = None
+        TABLE_STATE["error"] = msg
+        TABLE_STATE["updated_at"] = None
         return
 
     screen_bgr = cv2.imread(str(TABLE_SCREEN_PATH))
     if screen_bgr is None:
         msg = f"Failed to read screenshot image at {TABLE_SCREEN_PATH}"
-        logging.getLogger(__name__).error(msg)
-        TABLE_STATE = {
-            "result": None,
-            "error": msg,
-            "updated_at": None,
-        }
+        logger.error(msg)
+        TABLE_STATE["result"] = None
+        TABLE_STATE["error"] = msg
+        TABLE_STATE["updated_at"] = None
         return
 
     try:
         recognition = recognize_table_cards_pokerstars(screen_bgr, TABLE_LAYOUT, CARD_RECOGNIZER)
         hero_codes = [card.get("code") for card in recognition.get("hero", [])]
         board_codes = [card.get("code") for card in recognition.get("board", [])]
-        logging.getLogger(__name__).info(
+        logger.info(
             "Table recognition updated - hero: %s | board: %s",
             hero_codes,
             board_codes,
         )
 
-        TABLE_STATE = {
-            "result": recognition,
-            "error": None,
-            "updated_at": datetime.now(timezone.utc),
-        }
-    except Exception as exc:  # pylint: disable=broad-except
-        logging.getLogger(__name__).exception("Error during table cards recognition: %s", exc)
-        TABLE_STATE = {
-            "result": TABLE_STATE.get("result"),
-            "error": str(exc),
-            "updated_at": TABLE_STATE.get("updated_at"),
-        }
+        # Salva overlay di debug
+        try:
+            save_table_debug_overlay(screen_bgr, recognition, TABLE_DEBUG_PATH)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Failed to save debug overlay: %s", exc)
+
+        TABLE_STATE["result"] = recognition
+        TABLE_STATE["error"] = None
+        TABLE_STATE["updated_at"] = datetime.now(timezone.utc)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Error during table cards recognition: %s", exc)
+        # Manteniamo l'ultimo stato valido in caso di errore
+        TABLE_STATE["error"] = str(exc)
 
 
 async def table_cards_watcher() -> None:
@@ -640,6 +697,7 @@ async def get_table_cards(table_id: str) -> TableCardsResponse:
     return TableCardsResponse(
         table_id=table_id,
         image_path=str(TABLE_SCREEN_PATH),
+        debug_image_path=str(TABLE_DEBUG_PATH),
         updated_at=updated_at,
         status=status,
         hero=hero_cards,
