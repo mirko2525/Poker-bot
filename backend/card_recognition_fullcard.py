@@ -27,15 +27,31 @@ from typing import Dict, Tuple, Optional
 from PIL import Image
 
 TEMPLATES_DIR = "card_templates/pokerstars/full"
-MATCH_THRESHOLD = 0.6  # Score minimo per considerare match valido
+
+# ORDINE CAPO: Doppia soglia per confidenza
+THRESHOLD_STRONG = 0.85  # Quasi certo
+THRESHOLD_SOFT = 0.65    # Forse è lei, ma potrei sbagliare
 
 class FullCardRecognizer:
     """
     Recognizer basato su full-card template matching.
+    
+    ORDINE CAPO - Doppia soglia:
+    - strong (>0.85): carta sicura al 100%
+    - weak (0.65-0.85): probabile ma non certissimo
+    - none (<0.65): non riconosciuta / slot vuoto
     """
     
-    def __init__(self, templates_dir: str = TEMPLATES_DIR):
+    def __init__(
+        self, 
+        templates_dir: str = TEMPLATES_DIR,
+        threshold_strong: float = THRESHOLD_STRONG,
+        threshold_soft: float = THRESHOLD_SOFT
+    ):
         self.templates = self._load_templates(templates_dir)
+        self.th_strong = threshold_strong
+        self.th_soft = threshold_soft
+        
         if self.templates:
             # Prendi dimensione dai template
             first_tmpl = next(iter(self.templates.values()))
@@ -43,6 +59,7 @@ class FullCardRecognizer:
             print(f"✅ FullCardRecognizer initialized")
             print(f"   Templates: {len(self.templates)}/52")
             print(f"   Size: {self.template_size[0]}×{self.template_size[1]}px")
+            print(f"   Thresholds: strong={self.th_strong}, soft={self.th_soft}")
         else:
             self.template_size = None
             print(f"⚠️ No templates loaded!")
