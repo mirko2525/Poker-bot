@@ -715,66 +715,11 @@ async def get_demo_status():
 
 @api_router.get("/table/{table_id}/cards", response_model=TableCardsResponse)
 async def get_table_cards(table_id: str) -> TableCardsResponse:
-    """Ritorna le 7 carte riconosciute per il tavolo specificato.
-
-    Per ora supportiamo un solo tavolo reale: `table_id = "1"`,
-    che legge sempre dallo screenshot `data/screens/table1.png` sotto `backend`.
-    """
+    """Ritorna le 7 carte riconosciute per il tavolo specificato (stato corrente)."""
     if table_id != "1":
         raise HTTPException(status_code=404, detail="Unknown table_id")
 
-    state = TABLE_STATE
-    result = state.get("result") or {}
-    error = state.get("error")
-    updated_at = state.get("updated_at")
-
-    if result and not error:
-        status = "ok"
-    elif not result and error:
-        if "not found" in str(error).lower():
-            status = "no_image"
-        else:
-            status = "error"
-    else:
-        status = "pending"
-
-    hero_raw = result.get("hero", [])
-    board_raw = result.get("board", [])
-
-    hero_cards: List[RecognizedCard] = []
-    for card in hero_raw:
-        bbox_val = card.get("bbox")
-        hero_cards.append(
-            RecognizedCard(
-                code=card.get("code"),
-                score=float(card.get("score", 0.0)),
-                conf=str(card.get("conf", "none")),
-                bbox=tuple(bbox_val) if bbox_val is not None else None,
-            )
-        )
-
-    board_cards: List[RecognizedCard] = []
-    for card in board_raw:
-        bbox_val = card.get("bbox")
-        board_cards.append(
-            RecognizedCard(
-                code=card.get("code"),
-                score=float(card.get("score", 0.0)),
-                conf=str(card.get("conf", "none")),
-                bbox=tuple(bbox_val) if bbox_val is not None else None,
-            )
-        )
-
-    return TableCardsResponse(
-        table_id=table_id,
-        image_path=str(TABLE_SCREEN_PATH),
-        debug_image_path=str(TABLE_DEBUG_PATH),
-        updated_at=updated_at,
-        status=status,
-        hero=hero_cards,
-        board=board_cards,
-        error=error,
-    )
+    return build_table_cards_response(table_id)
 
 
 # Original routes
