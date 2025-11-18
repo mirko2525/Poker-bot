@@ -6,10 +6,18 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import uuid
 from datetime import datetime, timezone
 import random
+import asyncio
+
+import cv2
+from card_recognition_fullcard import FullCardRecognizer
+from pokerstars_layout_real import (
+    PokerStarsLayout2048x1279,
+    recognize_table_cards as recognize_table_cards_pokerstars,
+)
 
 
 ROOT_DIR = Path(__file__).parent
@@ -38,6 +46,7 @@ class HandState(BaseModel):
     players_in_hand: int = Field(..., description="Number of active players")
     phase: str = Field(..., description="Hand phase: PREFLOP, FLOP, TURN, RIVER")
 
+
 class Decision(BaseModel):
     action: str = Field(..., description="FOLD, CALL, or RAISE")
     raise_amount: float = Field(default=0.0, description="Amount to raise if action is RAISE")
@@ -45,11 +54,31 @@ class Decision(BaseModel):
     equity: float = Field(..., description="Calculated equity percentage")
     pot_odds: Optional[float] = Field(default=None, description="Pot odds percentage")
 
+
 class DemoResponse(BaseModel):
     hand_number: int
     hand_state: HandState
     decision: Decision
     has_next: bool
+
+
+# Models for table card recognition
+class RecognizedCard(BaseModel):
+    code: Optional[str] = Field(default=None, description="Recognized card code like 'Kd' or None")
+    score: float = Field(..., description="Template matching score [0-1]")
+    conf: str = Field(..., description="Confidence flag: strong | weak | none")
+    bbox: Optional[Tuple[int, int, int, int]] = Field(default=None, description="Bounding box (x,y,w,h)")
+
+
+class TableCardsResponse(BaseModel):
+    table_id: str
+    image_path: str
+    updated_at: Optional[datetime]
+    status: str  # ok | pending | no_image | error
+    hero: List[RecognizedCard]
+    board: List[RecognizedCard]
+    error: Optional[str] = None
+
 
 # Original Models
 class StatusCheck(BaseModel):
@@ -59,8 +88,10 @@ class StatusCheck(BaseModel):
     client_name: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 class StatusCheckCreate(BaseModel):
     client_name: str
+
 
 # Poker Bot Logic - Mock Implementations
 class MockStateProvider:
@@ -173,8 +204,9 @@ class MockStateProvider:
     def has_next(self):
         return self.current_index < len(self.mock_hands)
 
+
 class MockEquityEngine:
-    def __init__(self, enable_random=True):
+    def __init__(self, enable_random: bool = True):
         # Controllo randomness (Ordini Fase 2)
         self.enable_random = enable_random
         
@@ -226,7 +258,7 @@ class MockEquityEngine:
         card2_rank = hero_cards[1][0]
         
         # Convert face cards
-        rank_values = {"A": 14, "K": 13, "Q": 12, "J": 11, "T": 10}
+        rank_values: Dict[str, int] = {"A": 14, "K": 13, "Q": 12, "J": 11, "T": 10}
         
         for rank in [card1_rank, card2_rank]:
             if rank.isdigit():
@@ -253,8 +285,8 @@ class MockEquityEngine:
         return equity_decimal
     
     def _compute_postflop_equity(self, hand_state: HandState) -> float:
-        """
-        Compute postflop equity based on hand strength and board texture.
+        """Compute postflop equity based on hand strength and board texture.
+
         Returns value in decimal range 0-1 (not percentage).
         """
         # Start with preflop equity as base (already in decimal 0-1)
@@ -306,14 +338,19 @@ class MockEquityEngine:
         equity_pct = max(5, min(95, equity_pct))
         return equity_pct / 100.0
 
+
 class DecisionEngine:
     def __init__(self):
         # Costanti configurabili (Ordini Fase 2)
         # Importiamo le costanti dal file di configurazione
         from poker_config import (
-            MARGIN, STRONG_EQUITY_THRESHOLD, ALLIN_STACK_BB_THRESHOLD,
-            SHORT_STACK_BORDERLINE_BB, HIGH_EQUITY_FOR_ALLIN,
-            RAISE_POT_MULTIPLIER, RAISE_NO_COST_MULTIPLIER
+            MARGIN,
+            STRONG_EQUITY_THRESHOLD,
+            ALLIN_STACK_BB_THRESHOLD,
+            SHORT_STACK_BORDERLINE_BB,
+            HIGH_EQUITY_FOR_ALLIN,
+            RAISE_POT_MULTIPLIER,
+            RAISE_NO_COST_MULTIPLIER,
         )
         
         self.margin = MARGIN
@@ -325,13 +362,12 @@ class DecisionEngine:
         self.raise_no_cost_multiplier = RAISE_NO_COST_MULTIPLIER
     
     def decide_action(self, hand_state: HandState, equity: float) -> Decision:
-        """
-        Decide poker action based on hand state and equity.
-        
+        """Decide poker action based on hand state and equity.
+
         Args:
             hand_state: Current hand state
             equity: Equity as decimal (0-1 range, NOT percentage)
-        
+
         Returns:
             Decision object with action, raise_amount, and reason
         """
@@ -349,14 +385,14 @@ class DecisionEngine:
                 action="CALL",
                 raise_amount=0.0,
                 reason="Weak hand, but no cost to see next card",
-                equity=equity
+                equity=equity,
             )
         elif equity_fraction < 0.5:
             return Decision(
                 action="CALL",
                 raise_amount=0.0,
                 reason="Decent hand, check to see next card",
-                equity=equity
+                equity=equity,
             )
         else:
             raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_no_cost_multiplier)
@@ -364,7 +400,7 @@ class DecisionEngine:
                 action="RAISE",
                 raise_amount=raise_amount,
                 reason="Strong hand, small raise for value",
-                equity=equity
+                equity=equity,
             )
     
     def _decide_cost_to_call(self, hand_state: HandState, equity: float, equity_fraction: float) -> Decision:
@@ -378,7 +414,7 @@ class DecisionEngine:
                 raise_amount=hand_state.hero_stack,
                 reason=f"Short stack ({hero_stack_bb:.1f} BB) with strong equity - all-in",
                 equity=equity,
-                pot_odds=pot_odds * 100
+                pot_odds=pot_odds * 100,
             )
         
         # Compare equity vs pot odds
@@ -388,7 +424,7 @@ class DecisionEngine:
                 raise_amount=0.0,
                 reason=f"Equity ({equity*100:.1f}%) insufficient vs pot odds ({pot_odds*100:.1f}%)",
                 equity=equity,
-                pot_odds=pot_odds * 100
+                pot_odds=pot_odds * 100,
             )
         
         elif equity_fraction <= pot_odds + self.margin:
@@ -399,7 +435,7 @@ class DecisionEngine:
                     raise_amount=0.0,
                     reason=f"Borderline spot with decent stack ({hero_stack_bb:.1f} BB) - call",
                     equity=equity,
-                    pot_odds=pot_odds * 100
+                    pot_odds=pot_odds * 100,
                 )
             else:
                 return Decision(
@@ -407,7 +443,7 @@ class DecisionEngine:
                     raise_amount=0.0,
                     reason=f"Borderline spot with short stack ({hero_stack_bb:.1f} BB) - fold",
                     equity=equity,
-                    pot_odds=pot_odds * 100
+                    pot_odds=pot_odds * 100,
                 )
         
         else:
@@ -418,7 +454,7 @@ class DecisionEngine:
                     raise_amount=0.0,
                     reason=f"Good equity ({equity*100:.1f}%) vs pot odds ({pot_odds*100:.1f}%) - call",
                     equity=equity,
-                    pot_odds=pot_odds * 100
+                    pot_odds=pot_odds * 100,
                 )
             else:
                 raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_pot_multiplier)
@@ -427,13 +463,86 @@ class DecisionEngine:
                     raise_amount=raise_amount,
                     reason=f"Strong equity ({equity*100:.1f}%) - raise for value",
                     equity=equity,
-                    pot_odds=pot_odds * 100
+                    pot_odds=pot_odds * 100,
                 )
+
 
 # Initialize the poker bot components (Fase 2: Sincronizzazione parametri)
 mock_state_provider = MockStateProvider()
 equity_engine = MockEquityEngine(enable_random=True)  # Randomness per web demo
 decision_engine = DecisionEngine()
+
+# Initialize table recognition components (Fase tavolo reale)
+TABLE_SCREEN_PATH = ROOT_DIR / "data" / "screens" / "table1.png"
+TABLE_LAYOUT = PokerStarsLayout2048x1279()
+CARD_RECOGNIZER = FullCardRecognizer()
+
+# In-memory state for last recognized table
+TABLE_STATE: Dict[str, Any] = {
+    "result": None,
+    "error": None,
+    "updated_at": None,
+}
+
+
+async def update_table_cards_once() -> None:
+    """Legge lo screenshot del tavolo e aggiorna TABLE_STATE.
+
+    Usa le coordinate reali PokerStars (2048×1279) e il FullCardRecognizer
+    per riconoscere le 7 carte (2 hero + 5 board).
+    """
+    global TABLE_STATE
+
+    if not TABLE_SCREEN_PATH.exists():
+        msg = f"Screenshot file not found: {TABLE_SCREEN_PATH}"
+        logging.getLogger(__name__).warning(msg)
+        TABLE_STATE = {
+            "result": None,
+            "error": msg,
+            "updated_at": None,
+        }
+        return
+
+    screen_bgr = cv2.imread(str(TABLE_SCREEN_PATH))
+    if screen_bgr is None:
+        msg = f"Failed to read screenshot image at {TABLE_SCREEN_PATH}"
+        logging.getLogger(__name__).error(msg)
+        TABLE_STATE = {
+            "result": None,
+            "error": msg,
+            "updated_at": None,
+        }
+        return
+
+    try:
+        recognition = recognize_table_cards_pokerstars(screen_bgr, TABLE_LAYOUT, CARD_RECOGNIZER)
+        hero_codes = [card.get("code") for card in recognition.get("hero", [])]
+        board_codes = [card.get("code") for card in recognition.get("board", [])]
+        logging.getLogger(__name__).info(
+            "Table recognition updated - hero: %s | board: %s",
+            hero_codes,
+            board_codes,
+        )
+
+        TABLE_STATE = {
+            "result": recognition,
+            "error": None,
+            "updated_at": datetime.now(timezone.utc),
+        }
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.getLogger(__name__).exception("Error during table cards recognition: %s", exc)
+        TABLE_STATE = {
+            "result": TABLE_STATE.get("result"),
+            "error": str(exc),
+            "updated_at": TABLE_STATE.get("updated_at"),
+        }
+
+
+async def table_cards_watcher() -> None:
+    """Loop che aggiorna le carte del tavolo ogni 5 secondi."""
+    while True:
+        await update_table_cards_once()
+        await asyncio.sleep(5)
 
 
 # Add poker bot routes
@@ -442,6 +551,7 @@ async def start_demo():
     """Reset demo and get first hand"""
     mock_state_provider.reset_mock_hands()
     return {"message": "Demo started", "total_hands": len(mock_state_provider.mock_hands)}
+
 
 @api_router.get("/poker/demo/next", response_model=DemoResponse)
 async def get_next_hand():
@@ -461,8 +571,9 @@ async def get_next_hand():
         hand_number=mock_state_provider.current_index,
         hand_state=hand_state,
         decision=decision,
-        has_next=mock_state_provider.has_next()
+        has_next=mock_state_provider.has_next(),
     )
+
 
 @api_router.get("/poker/demo/status")
 async def get_demo_status():
@@ -470,13 +581,78 @@ async def get_demo_status():
     return {
         "current_hand": mock_state_provider.current_index,
         "total_hands": len(mock_state_provider.mock_hands),
-        "has_next": mock_state_provider.has_next()
+        "has_next": mock_state_provider.has_next(),
     }
+
+
+@api_router.get("/table/{table_id}/cards", response_model=TableCardsResponse)
+async def get_table_cards(table_id: str) -> TableCardsResponse:
+    """Ritorna le 7 carte riconosciute per il tavolo specificato.
+
+    Per ora supportiamo un solo tavolo reale: `table_id = "1"`,
+    che legge sempre dallo screenshot `data/screens/table1.png` sotto `backend`.
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+
+    state = TABLE_STATE
+    result = state.get("result") or {}
+    error = state.get("error")
+    updated_at = state.get("updated_at")
+
+    if result and not error:
+        status = "ok"
+    elif not result and error:
+        if "not found" in str(error).lower():
+            status = "no_image"
+        else:
+            status = "error"
+    else:
+        status = "pending"
+
+    hero_raw = result.get("hero", [])
+    board_raw = result.get("board", [])
+
+    hero_cards: List[RecognizedCard] = []
+    for card in hero_raw:
+        bbox_val = card.get("bbox")
+        hero_cards.append(
+            RecognizedCard(
+                code=card.get("code"),
+                score=float(card.get("score", 0.0)),
+                conf=str(card.get("conf", "none")),
+                bbox=tuple(bbox_val) if bbox_val is not None else None,
+            )
+        )
+
+    board_cards: List[RecognizedCard] = []
+    for card in board_raw:
+        bbox_val = card.get("bbox")
+        board_cards.append(
+            RecognizedCard(
+                code=card.get("code"),
+                score=float(card.get("score", 0.0)),
+                conf=str(card.get("conf", "none")),
+                bbox=tuple(bbox_val) if bbox_val is not None else None,
+            )
+        )
+
+    return TableCardsResponse(
+        table_id=table_id,
+        image_path=str(TABLE_SCREEN_PATH),
+        updated_at=updated_at,
+        status=status,
+        hero=hero_cards,
+        board=board_cards,
+        error=error,
+    )
+
 
 # Original routes
 @api_router.get("/")
 async def root():
     return {"message": "Poker Bot Demo API - Ready"}
+
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -490,6 +666,7 @@ async def create_status_check(input: StatusCheckCreate):
     _ = await db.status_checks.insert_one(doc)
     return status_obj
 
+
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
     # Exclude MongoDB's _id field from the query results
@@ -501,6 +678,7 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
 
 # Include the router in the main app
 app.include_router(api_router)
@@ -519,6 +697,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    """Startup hook: avvia il watcher delle carte tavolo."""
+    loop = asyncio.get_event_loop()
+    loop.create_task(table_cards_watcher())
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

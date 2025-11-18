@@ -21,6 +21,10 @@ const PokerBotDemo = () => {
   const [handNumber, setHandNumber] = useState(0);
   const [hasNext, setHasNext] = useState(true);
 
+  // Table recognition state
+  const [tableCards, setTableCards] = useState(null);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+
   const startDemo = async () => {
     try {
       setIsLoading(true);
@@ -65,6 +69,20 @@ const PokerBotDemo = () => {
     }
   };
 
+  const fetchTableCards = async () => {
+    try {
+      setIsTableLoading(true);
+      const response = await axios.get(`${API}/table/1/cards`);
+      setTableCards(response.data);
+      toast.success('Table cards updated');
+    } catch (error) {
+      console.error('Error fetching table cards:', error);
+      toast.error('Failed to fetch table cards');
+    } finally {
+      setIsTableLoading(false);
+    }
+  };
+
   // Auto-start demo on component mount
   useEffect(() => {
     const initDemo = async () => {
@@ -79,6 +97,18 @@ const PokerBotDemo = () => {
     
     initDemo();
   }, []);
+
+  const formatCardsLine = (cards) => {
+    if (!cards || cards.length === 0) return 'No data';
+    return cards
+      .map((c) => {
+        const code = c.code || '??';
+        const conf = c.conf || 'none';
+        const score = typeof c.score === 'number' ? c.score.toFixed(2) : '0.00';
+        return `${code} (${conf}/${score})`;
+      })
+      .join('  ');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,6 +292,46 @@ const PokerBotDemo = () => {
                     <span className="text-sm">UI Demo</span>
                     <Badge variant="secondary" className="bg-success/20 text-success">Connected</Badge>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Table Recognition Panel */}
+              <Card className="glass-card mt-6">
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg text-primary">
+                    📷 Table Recognition (Screenshot)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span>Status</span>
+                    <Badge variant="outline">{tableCards?.status || 'pending'}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Updated:{' '}
+                    {tableCards?.updated_at
+                      ? new Date(tableCards.updated_at).toLocaleTimeString()
+                      : '-'}
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Hero</div>
+                    <div className="text-xs text-muted-foreground break-words">
+                      {formatCardsLine(tableCards?.hero)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Board</div>
+                    <div className="text-xs text-muted-foreground break-words">
+                      {formatCardsLine(tableCards?.board)}
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={fetchTableCards}
+                    disabled={isTableLoading}
+                    className="w-full mt-2"
+                  >
+                    {isTableLoading ? 'Loading...' : 'Fetch Table Cards'}
+                  </Button>
                 </CardContent>
               </Card>
             </div>
