@@ -143,16 +143,60 @@ def recognize_table_cards(
         "board": [],
     }
 
-    # Recognize hero cards (verde nel debug overlay)
-    for (x, y, w_box, h_box) in layout.hero_cards:
-        sx, sy, sw, sh = _scale_bbox((x, y, w_box, h_box), scale_x, scale_y, w, h)
-        code, score, conf = crop_and_recognize(sx, sy, sw, sh)
+    # Recognize hero cards
+    # Hero2 (carta davanti) con full-card recognizer
+    if layout.hero_cards:
+        # hero2 è la seconda bbox nella lista
+        if len(layout.hero_cards) > 1:
+            x2, y2, w2, h2 = layout.hero_cards[1]
+            sx2, sy2, sw2, sh2 = _scale_bbox((x2, y2, w2, h2), scale_x, scale_y, w, h)
+            code2, score2, conf2 = crop_and_recognize(sx2, sy2, sw2, sh2)
+        else:
+            sx2 = sy2 = sw2 = sh2 = 0
+            code2 = None
+            score2 = 0.0
+            conf2 = "none"
+
+        # Hero1 (carta dietro) solo angolino rank+suit
+        fx, fy, fw, fh = layout.hero1_corner_frac
+        corner_x = int(round(fx * w))
+        corner_y = int(round(fy * h))
+        corner_w = int(round(fw * w))
+        corner_h = int(round(fh * h))
+        corner_x, corner_y, corner_w, corner_h = _scale_bbox(
+            (corner_x, corner_y, corner_w, corner_h), 1.0, 1.0, w, h
+        )
+
+        corner_bgr = screen_bgr[corner_y:corner_y + corner_h, corner_x:corner_x + corner_w]
+        hero1_code = None
+        hero1_score = 0.0
+        hero1_conf = "none"
+        if corner_bgr.size > 0 and _RANK_TEMPLATES and _SUIT_TEMPLATES:
+            # convert to PIL Image
+            corner_pil = Image.fromarray(cv2.cvtColor(corner_bgr, cv2.COLOR_BGR2RGB))
+            code, conf = recognize_card_ranksuit(corner_pil, _RANK_TEMPLATES, _SUIT_TEMPLATES)
+            if code is not None:
+                hero1_code = code
+                hero1_score = conf
+                hero1_conf = "strong" if conf >= 0.75 else "weak"
+
+        # Hero1
         results["hero"].append(
             {
-                "code": code,
-                "score": score,
-                "conf": conf,
-                "bbox": (sx, sy, sw, sh),
+                "code": hero1_code,
+                "score": hero1_score,
+                "conf": hero1_conf,
+                "bbox": (corner_x, corner_y, corner_w, corner_h),
+            }
+        )
+
+        # Hero2
+        results["hero"].append(
+            {
+                "code": code2,
+                "score": score2,
+                "conf": conf2,
+                "bbox": (sx2, sy2, sw2, sh2),
             }
         )
 
