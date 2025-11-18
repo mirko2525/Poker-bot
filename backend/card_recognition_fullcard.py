@@ -110,28 +110,58 @@ class FullCardRecognizer:
         
         return card_norm
     
+    def is_empty_slot(self, card_crop: np.ndarray) -> bool:
+        """
+        Rileva se uno slot è vuoto (tavolo verde/marrone, no carta).
+        
+        Args:
+            card_crop: Crop della carta
+            
+        Returns:
+            True se slot vuoto (bassa varianza = colore uniforme)
+        """
+        # Convert if needed
+        if isinstance(card_crop, Image.Image):
+            card_crop = np.array(card_crop)
+        
+        if len(card_crop.shape) == 3:
+            card_crop = cv2.cvtColor(card_crop, cv2.COLOR_BGR2GRAY)
+        
+        # Calcola deviazione standard
+        std = np.std(card_crop)
+        
+        # Se molto bassa → colore uniforme (tavolo, no carta)
+        return std < 15.0
+    
     def recognize_card(
         self, 
-        card_crop: np.ndarray,
-        threshold: float = MATCH_THRESHOLD
-    ) -> Tuple[Optional[str], float]:
+        card_crop: np.ndarray
+    ) -> Tuple[Optional[str], float, str]:
         """
-        Riconosce una carta usando template matching.
+        Riconosce una carta usando template matching con confidenza.
+        
+        ORDINE CAPO - Ritorna tripla:
+        - code: carta riconosciuta (es: "Ah") o None
+        - score: match score [0-1]
+        - conf: "strong" | "weak" | "none"
         
         Args:
             card_crop: Carta croppata dal tavolo
-            threshold: Score minimo per match valido
             
         Returns:
-            (card_code, score) es: ("Ah", 0.92) o (None, 0.0)
+            (card_code, score, conf) es: ("Ah", 0.92, "strong")
         """
         if not self.templates:
-            return None, 0.0
+            return None, 0.0, "none"
+        
+        # Check se slot vuoto
+        if self.is_empty_slot(card_crop):
+            return None, 0.0, "none"
         
         # Normalize crop
         card_norm = self.normalize_card_crop(card_crop)
         
-        # Match con tutti i template
+        # Match con tutti i 52 template
         best_code = None
         best_score = -1.0
         
@@ -145,11 +175,15 @@ class FullCardRecognizer:
                 best_score = score
                 best_code = code
         
-        # Check threshold
-        if best_score < threshold:
-            return None, best_score
+        # Determina confidenza ORDINE CAPO
+        if best_score >= self.th_strong:
+            conf = "strong"
+        elif best_score >= self.th_soft:
+            conf = "weak"
+        else:
+            return None, best_score, "none"
         
-        return best_code, best_score
+        return best_code, best_score, conf
     
     def recognize_multiple(
         self,
