@@ -289,7 +289,9 @@ if __name__ == "__main__":
             print("❌ No templates loaded")
             sys.exit(1)
 
-        res = recognize_table_cards(img, layout, rec)
+        # Per il test CLI usiamo solo il recognizer full-card come hero_front/board
+        dummy_back = HeroBackRecognizer(Path("card_templates/pokerstars/hero_back"))
+        res = recognize_table_cards_pokerstars(img, layout, rec, dummy_back)
         print("\nHERO:")
         for c in res["hero"]:
             print(c)
