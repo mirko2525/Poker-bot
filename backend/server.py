@@ -136,6 +136,43 @@ def build_table_cards_response(table_id: str) -> "TableCardsResponse":
                 conf=str(card.get("conf", "none")),
                 bbox=tuple(bbox_val) if bbox_val is not None else None,
             )
+
+from equity_engine import compute_equity_stub
+
+
+def get_current_cards_for_equity() -> tuple[list[str], list[str], str, str]:
+    """Estrae hero/board "usabili" da TABLE_STATE per il calcolo equity.
+
+    Ritorna (hero_cards, board_cards, status, error_msg)
+    status: ok | missing_cards | error
+    """
+    state = TABLE_STATE
+    result = state.get("result") or {}
+    error = state.get("error")
+
+    if error:
+        return [], [], "error", str(error)
+
+    hero_raw = result.get("hero", [])
+    board_raw = result.get("board", [])
+
+    hero_cards = [
+        c.get("code")
+        for c in hero_raw
+        if c.get("code") and c.get("conf") == "strong"
+    ]
+    board_cards = [
+        c.get("code")
+        for c in board_raw
+        if c.get("code") and c.get("conf") == "strong"
+    ]
+
+    if len(hero_cards) < 2:
+        return hero_cards, board_cards, "missing_cards", "Not enough hero cards"
+
+    return hero_cards, board_cards, "ok", ""
+
+
         )
 
     return TableCardsResponse(
