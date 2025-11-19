@@ -14,9 +14,10 @@ import asyncio
 
 import cv2
 from card_recognition_fullcard import FullCardRecognizer
+from card_recognition_hero_back import HeroBackRecognizer
 from pokerstars_layout_real import (
     PokerStarsLayout2048x1279,
-    recognize_table_cards as recognize_table_cards_pokerstars,
+    recognize_table_cards_pokerstars,
 )
 
 
