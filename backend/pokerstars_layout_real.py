@@ -163,6 +163,15 @@ def recognize_table_cards_pokerstars(
             }
         )
 
+    results["board"].append(
+            {
+                "code": code,
+                "score": score,
+                "conf": conf,
+                "bbox": (sx, sy, sw, sh),
+            }
+        )
+
     return results
 
 
