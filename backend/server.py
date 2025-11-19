@@ -535,6 +535,8 @@ TABLE_SCREEN_PATH = ROOT_DIR / "data" / "screens" / "table1.png"
 TABLE_DEBUG_PATH = ROOT_DIR / "data" / "screens" / "table1_debug.png"
 TABLE_LAYOUT = PokerStarsLayout2048x1279()
 CARD_RECOGNIZER = FullCardRecognizer()
+HERO_BACK_TEMPLATES_DIR = ROOT_DIR / "card_templates" / "pokerstars" / "hero_back"
+HERO_BACK_RECOGNIZER = HeroBackRecognizer(HERO_BACK_TEMPLATES_DIR)
 
 # In-memory state for last recognized table
 TABLE_STATE: Dict[str, Any] = {
