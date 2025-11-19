@@ -718,6 +718,46 @@ async def update_table_cards_once() -> None:
         TABLE_STATE["error"] = None
         TABLE_STATE["updated_at"] = datetime.now(timezone.utc)
     except Exception as exc:  # noqa: BLE001
+
+@api_router.get("/table/{table_id}/equity", response_model=TableEquityResponse)
+async def get_table_equity(table_id: str, num_players: int = 2) -> TableEquityResponse:
+    """Ritorna equity stub basata sulle carte riconosciute forti.
+
+    Usa solo le carte con conf == "strong" da hero + board.
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+
+    hero_cards, board_cards, status, err = get_current_cards_for_equity()
+
+    if status != "ok":
+        return TableEquityResponse(
+            table_id=table_id,
+            num_players=num_players,
+            hero_cards=hero_cards,
+            board_cards=board_cards,
+            status=status,
+            hero_win=0.0,
+            hero_tie=0.0,
+            hero_lose=0.0,
+            error=err or None,
+        )
+
+    eq = compute_equity_stub(hero_cards, board_cards, num_players)
+
+    return TableEquityResponse(
+        table_id=table_id,
+        num_players=num_players,
+        hero_cards=hero_cards,
+        board_cards=board_cards,
+        status="ok",
+        hero_win=eq.get("win", 0.0),
+        hero_tie=eq.get("tie", 0.0),
+        hero_lose=eq.get("lose", 0.0),
+        error=None,
+    )
+
+
         logger.exception("Error during table cards recognition: %s", exc)
         # Manteniamo l'ultimo stato valido in caso di errore
         TABLE_STATE["error"] = str(exc)
