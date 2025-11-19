@@ -717,6 +717,10 @@ async def update_table_cards_once() -> None:
         TABLE_STATE["error"] = None
         TABLE_STATE["updated_at"] = datetime.now(timezone.utc)
     except Exception as exc:  # noqa: BLE001
+        logger.exception("Error during table cards recognition: %s", exc)
+        # Manteniamo l'ultimo stato valido in caso di errore
+        TABLE_STATE["error"] = str(exc)
+
 
 @api_router.get("/table/{table_id}/equity", response_model=TableEquityResponse)
 async def get_table_equity(table_id: str, num_players: int = 2) -> TableEquityResponse:
@@ -755,11 +759,6 @@ async def get_table_equity(table_id: str, num_players: int = 2) -> TableEquityRe
         hero_lose=eq.get("lose", 0.0),
         error=None,
     )
-
-
-        logger.exception("Error during table cards recognition: %s", exc)
-        # Manteniamo l'ultimo stato valido in caso di errore
-        TABLE_STATE["error"] = str(exc)
 
 
 @api_router.post("/table/{table_id}/screenshot", response_model=TableCardsResponse)
