@@ -630,7 +630,12 @@ async def update_table_cards_once() -> None:
         return
 
     try:
-        recognition = recognize_table_cards_pokerstars(screen_bgr, TABLE_LAYOUT, CARD_RECOGNIZER)
+        recognition = recognize_table_cards_pokerstars(
+            screen_bgr,
+            TABLE_LAYOUT,
+            CARD_RECOGNIZER,
+            HERO_BACK_RECOGNIZER,
+        )
         hero_codes = [card.get("code") for card in recognition.get("hero", [])]
         board_codes = [card.get("code") for card in recognition.get("board", [])]
         logger.info(
