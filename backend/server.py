@@ -82,6 +82,18 @@ class TableCardsResponse(BaseModel):
     error: Optional[str] = None
 
 
+class TableEquityResponse(BaseModel):
+    table_id: str
+    num_players: int
+    hero_cards: List[str]
+    board_cards: List[str]
+    status: str  # ok | missing_cards | error
+    hero_win: float
+    hero_tie: float
+    hero_lose: float
+    error: Optional[str] = None
+
+
 def build_table_cards_response(table_id: str) -> "TableCardsResponse":
     """Costruisce la risposta TableCardsResponse a partire da TABLE_STATE."""
     state = TABLE_STATE
