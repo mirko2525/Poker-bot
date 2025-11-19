@@ -33,7 +33,9 @@ class PokerStarsLayout2048x1279:
     def __init__(self) -> None:
         # Hero cards – back (parziale) + front (intera)
         # Coordinate dal tuo screen reale (2048×1279 base)
-        self.hero_back = (770, 838, 70, 188)      # carta dietro (porzione visibile)
+        # Stringiamo un po' la height della carta dietro per evitare troppo rumore
+        # e concentrarci sulla parte superiore dove c'è rank+suit.
+        self.hero_back = (770, 838, 70, 140)      # carta dietro (porzione visibile, top)
         self.hero_front = (815, 850, 133, 189)    # carta davanti (full-card)
 
         # Board cards (5 carte al centro)
