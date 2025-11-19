@@ -31,24 +31,10 @@ class PokerStarsLayout2048x1279:
     """
 
     def __init__(self) -> None:
-        # Hero cards (2 carte in basso)
-        # Ordine: sinistra → destra
-        self.hero_cards = [
-            (772, 838, 132, 188),   # hero[0] - carta sinistra (full card)
-            (815, 850, 133, 189),   # hero[1] - carta destra (full card)
-        ]
-
-        # ROI angolino hero1 (rank+suit) misurato su screenshot 1920×1080.
-        # Normalizzato in frazioni [0-1] rispetto a (width, height) immagine.
-        # Dallo screen con rettangolo blu:
-        #   top-left  (384, 709)
-        #   bottom-right (475, 776)
-        #   w=91, h=67 su 1920×1080 → frazioni:
-        #   fx = 384/1920 = 0.20
-        #   fy = 709/1080 ≈ 0.6565
-        #   fw = 91/1920 ≈ 0.0474
-        #   fh = 67/1080 ≈ 0.0620
-        self.hero1_corner_frac = (0.20, 0.6565, 0.0474, 0.0620)
+        # Hero cards – back (parziale) + front (intera)
+        # Coordinate dal tuo screen reale (2048×1279 base)
+        self.hero_back = (770, 838, 70, 188)      # carta dietro (porzione visibile)
+        self.hero_front = (815, 850, 133, 189)    # carta davanti (full-card)
 
         # Board cards (5 carte al centro)
         # Ordine: sinistra → destra
