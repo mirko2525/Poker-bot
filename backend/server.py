@@ -136,6 +136,19 @@ def build_table_cards_response(table_id: str) -> "TableCardsResponse":
                 conf=str(card.get("conf", "none")),
                 bbox=tuple(bbox_val) if bbox_val is not None else None,
             )
+        )
+
+    return TableCardsResponse(
+        table_id=table_id,
+        image_path=str(TABLE_SCREEN_PATH),
+        debug_image_path=str(TABLE_DEBUG_PATH),
+        updated_at=updated_at,
+        status=status,
+        hero=hero_cards,
+        board=board_cards,
+        error=error,
+    )
+
 
 from equity_engine import compute_equity_stub
 
@@ -171,20 +184,6 @@ def get_current_cards_for_equity() -> tuple[list[str], list[str], str, str]:
         return hero_cards, board_cards, "missing_cards", "Not enough hero cards"
 
     return hero_cards, board_cards, "ok", ""
-
-
-        )
-
-    return TableCardsResponse(
-        table_id=table_id,
-        image_path=str(TABLE_SCREEN_PATH),
-        debug_image_path=str(TABLE_DEBUG_PATH),
-        updated_at=updated_at,
-        status=status,
-        hero=hero_cards,
-        board=board_cards,
-        error=error,
-    )
 
 
 # Original Models
