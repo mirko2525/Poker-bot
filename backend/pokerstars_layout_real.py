@@ -112,67 +112,48 @@ def recognize_table_cards_pokerstars(
     scale_x = w / BASE_WIDTH
     scale_y = h / BASE_HEIGHT
 
-    def crop_and_recognize(x: int, y: int, w_box: int, h_box: int):
-        """Helper: crop + recognize"""
-        crop = gray[y:y + h_box, x:x + w_box]
-        return recognizer.recognize_card(crop)
+    def crop_gray(x: int, y: int, w_box: int, h_box: int):
+        """Helper: crop in grayscale"""
+        return gray[y:y + h_box, x:x + w_box]
 
     results: Dict[str, List[Dict]] = {
         "hero": [],
         "board": [],
     }
 
-    # Recognize hero cards
-    if layout.hero_cards:
-        # HERO1 (carta dietro): usiamo bbox full-card ma riconoscimento rank+suit
-        x1, y1, w1, h1 = layout.hero_cards[0]
-        sx1, sy1, sw1, sh1 = _scale_bbox((x1, y1, w1, h1), scale_x, scale_y, w, h)
-        hero1_code = None
-        hero1_score = 0.0
-        hero1_conf = "none"
+    # --- HERO BACK (carta dietro, ROI stretta) ---
+    bx, by, bw, bh = layout.hero_back
+    sbx, sby, sbw, sbh = _scale_bbox((bx, by, bw, bh), scale_x, scale_y, w, h)
+    back_crop = crop_gray(sbx, sby, sbw, sbh)
+    back_code, back_score, back_conf = hero_back_recognizer.recognize(back_crop)
+    results["hero"].append(
+        {
+            "code": back_code,
+            "score": back_score,
+            "conf": back_conf,
+            "bbox": (sbx, sby, sbw, sbh),
+        }
+    )
 
-        hero1_bgr = screen_bgr[sy1:sy1 + sh1, sx1:sx1 + sw1]
-        if hero1_bgr.size > 0 and _RANK_TEMPLATES and _SUIT_TEMPLATES:
-            hero1_pil = Image.fromarray(cv2.cvtColor(hero1_bgr, cv2.COLOR_BGR2RGB))
-            code, conf = recognize_card_ranksuit(hero1_pil, _RANK_TEMPLATES, _SUIT_TEMPLATES)
-            if code is not None:
-                hero1_code = code
-                hero1_score = conf
-                hero1_conf = "strong" if conf >= 0.75 else "weak"
+    # --- HERO FRONT (carta davanti, full-card) ---
+    fx, fy, fw, fh = layout.hero_front
+    sfx, sfy, sfw, sfh = _scale_bbox((fx, fy, fw, fh), scale_x, scale_y, w, h)
+    front_crop = crop_gray(sfx, sfy, sfw, sfh)
+    front_code, front_score, front_conf = full_recognizer.recognize_card(front_crop)
+    results["hero"].append(
+        {
+            "code": front_code,
+            "score": front_score,
+            "conf": front_conf,
+            "bbox": (sfx, sfy, sfw, sfh),
+        }
+    )
 
-        results["hero"].append(
-            {
-                "code": hero1_code,
-                "score": hero1_score,
-                "conf": hero1_conf,
-                "bbox": (sx1, sy1, sw1, sh1),
-            }
-        )
-
-        # HERO2 (carta davanti) con full-card recognizer
-        if len(layout.hero_cards) > 1:
-            x2, y2, w2, h2 = layout.hero_cards[1]
-            sx2, sy2, sw2, sh2 = _scale_bbox((x2, y2, w2, h2), scale_x, scale_y, w, h)
-            code2, score2, conf2 = crop_and_recognize(sx2, sy2, sw2, sh2)
-        else:
-            sx2 = sy2 = sw2 = sh2 = 0
-            code2 = None
-            score2 = 0.0
-            conf2 = "none"
-
-        results["hero"].append(
-            {
-                "code": code2,
-                "score": score2,
-                "conf": conf2,
-                "bbox": (sx2, sy2, sw2, sh2),
-            }
-        )
-
-    # Recognize board cards (blu nel debug overlay)
+    # --- BOARD (5 carte full-card) ---
     for (x, y, w_box, h_box) in layout.board_cards:
         sx, sy, sw, sh = _scale_bbox((x, y, w_box, h_box), scale_x, scale_y, w, h)
-        code, score, conf = crop_and_recognize(sx, sy, sw, sh)
+        b_crop = crop_gray(sx, sy, sw, sh)
+        code, score, conf = full_recognizer.recognize_card(b_crop)
         results["board"].append(
             {
                 "code": code,
