@@ -74,10 +74,6 @@ def _scale_bbox(
     return x, y, w, h
 
 
-# Carichiamo i template rank+suit una sola volta a livello modulo
-_RANK_TEMPLATES = load_rank_templates()
-_SUIT_TEMPLATES = load_suit_templates()
-
 
 def recognize_table_cards(
     screen_bgr,
