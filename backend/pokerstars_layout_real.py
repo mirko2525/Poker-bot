@@ -75,17 +75,19 @@ def _scale_bbox(
 
 
 
-def recognize_table_cards(
+def recognize_table_cards_pokerstars(
     screen_bgr,
     layout: PokerStarsLayout2048x1279,
-    recognizer: FullCardRecognizer,
+    full_recognizer: FullCardRecognizer,
+    hero_back_recognizer: HeroBackRecognizer,
 ) -> Dict:
     """ORDINE CAPO: Riconosce tutte le 7 carte da screenshot tavolo.
 
     Args:
         screen_bgr: Screenshot BGR del tavolo (qualsiasi risoluzione)
         layout: Layout con coordinate misurate su 2048×1279
-        recognizer: FullCardRecognizer inizializzato
+        full_recognizer: FullCardRecognizer per hero_front + board
+        hero_back_recognizer: HeroBackRecognizer per hero_back
 
     La funzione adatta automaticamente le coordinate se lo screenshot
     non è esattamente 2048×1279 ma mantiene lo stesso aspect ratio.
