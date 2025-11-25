@@ -74,3 +74,4 @@ emergentintegrations
 treys
 deuces
 opencv-python-headless
+emergentintegrations
