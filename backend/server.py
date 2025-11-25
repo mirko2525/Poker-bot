@@ -959,6 +959,66 @@ async def get_table_cards(table_id: str) -> TableCardsResponse:
     return build_table_cards_response(table_id)
 
 
+@api_router.post("/table/{table_id}/upload")
+async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)):
+    """
+    Upload screenshot del tavolo poker per riconoscimento automatico.
+    
+    Il client desktop invia screenshot ogni 3 secondi.
+    Il backend salva l'immagine e triggera il riconoscimento carte.
+    
+    Args:
+        table_id: ID del tavolo (es. "1")
+        file: Immagine PNG/JPG dello screenshot
+    
+    Returns:
+        Status dell'upload e risultato riconoscimento
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+    
+    try:
+        # Leggi il file
+        contents = await file.read()
+        
+        # Salva in /app/backend/data/screens/table{table_id}.png
+        screens_dir = ROOT_DIR / "data" / "screens"
+        screens_dir.mkdir(parents=True, exist_ok=True)
+        
+        screenshot_path = screens_dir / f"table{table_id}.png"
+        
+        with open(screenshot_path, "wb") as f:
+            f.write(contents)
+        
+        logger.info(f"✅ Screenshot salvato: {screenshot_path} ({len(contents)} bytes)")
+        
+        # Triggera riconoscimento carte
+        # Questo aggiorna TABLE_STATE con le nuove carte
+        await update_table_cards_once()
+        
+        # Ritorna stato riconoscimento
+        cards_response = build_table_cards_response(table_id)
+        
+        return {
+            "status": "success",
+            "message": f"Screenshot uploaded and processed ({len(contents)} bytes)",
+            "table_id": table_id,
+            "recognition": {
+                "status": cards_response.status,
+                "hero_cards": len(cards_response.hero),
+                "board_cards": len(cards_response.board),
+                "error": cards_response.error
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Errore upload screenshot: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Errore durante upload: {str(e)}"
+        )
+
+
 # Original routes
 @api_router.get("/")
 async def root():
