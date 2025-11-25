@@ -960,6 +960,31 @@ async def get_table_cards(table_id: str) -> TableCardsResponse:
     return build_table_cards_response(table_id)
 
 
+@api_router.get("/table/{table_id}/screenshot")
+async def get_table_screenshot(table_id: str, debug: bool = False):
+    """
+    Visualizza lo screenshot del tavolo.
+    
+    Args:
+        table_id: ID tavolo
+        debug: Se True, mostra la versione con box di riconoscimento
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+    
+    screens_dir = ROOT_DIR / "data" / "screens"
+    
+    if debug:
+        screenshot_path = screens_dir / f"table{table_id}_debug.png"
+    else:
+        screenshot_path = screens_dir / f"table{table_id}.png"
+    
+    if not screenshot_path.exists():
+        raise HTTPException(status_code=404, detail="Screenshot not found")
+    
+    return FileResponse(screenshot_path, media_type="image/png")
+
+
 @api_router.post("/table/{table_id}/upload")
 async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)):
     """
