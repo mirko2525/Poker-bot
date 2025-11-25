@@ -199,12 +199,16 @@ Identifica:
 Poi fornisci:
 - **Azione consigliata**: FOLD, CALL, CHECK o RAISE
 - **Importo raise** (se RAISE, quanto in dollari, altrimenti 0)
-- **Equity stimata** (metti un valore ragionevole 0-1, verrà ricalcolato matematicamente dopo)
+- **Equity stimata** (IMPORTANTE: calcola considerando il CONTESTO di gioco)
+  * NON vs mano random, ma vs RANGE REALISTICO dell'avversario
+  * Se villain raise → range tight (QQ+, AK, AQ) → equity più bassa
+  * Se villain call → range medio → equity media
+  * Se villain limp → range wide → equity più alta
+  * Considera posizione: UTG raise = range tight, BTN raise = range più wide
+  * Sii REALISTICO: A3o vs raise = 25-35%, non 58%!
 - **Confidenza** (quanto sei sicuro 0-1, esempio 0.80 = molto sicuro)
 - **Commento AI** (spiegazione breve in italiano, 3-5 frasi)
-  ⚠️ IMPORTANTE: NON menzionare percentuali di equity nel commento!
-  L'equity verrà calcolata matematicamente dopo, quindi non scrivere "hai 32% equity" o simili.
-  Concentrati su: forza mano, pot odds, posizione, range avversario, strategia.
+  Puoi menzionare l'equity se vuoi, dato che è calcolata contestualmente.
 
 Rispondi SOLO con questo JSON (niente altro testo):
 
