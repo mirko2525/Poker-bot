@@ -71,7 +71,7 @@ python poker_live_overlay.py
 ║      POKER SCREENSHOT CLIENT           ║
 ╚════════════════════════════════════════╝
 
-🎯 Backend: https://poker-ai-assist.preview.emergentagent.com/api
+🎯 Backend: https://poker-assistant-2.preview.emergentagent.com/api
 ⏱️  Intervallo: 3 secondi
 🎴 Tavolo ID: 1
 
@@ -149,7 +149,7 @@ pip install PyQt5
 ### ❌ "Upload fallito: 500"
 **Soluzione:**
 - Verifica che il backend Emergent sia online
-- Apri nel browser: https://poker-ai-assist.preview.emergentagent.com/api/
+- Apri nel browser: https://poker-assistant-2.preview.emergentagent.com/api/
 - Dovrebbe mostrare: `{"message": "Poker Bot Demo API - Ready"}`
 
 ### ❌ "Hero: [] Board: []" (carte non riconosciute)
@@ -199,7 +199,7 @@ python poker_live_overlay.py  # Finestra 2
 ### Test rapido sistema:
 ```powershell
 # Test API backend
-curl https://poker-ai-assist.preview.emergentagent.com/api/
+curl https://poker-assistant-2.preview.emergentagent.com/api/
 
 # Test analisi AI (con dati mock)
 cd C:\Users\mirko\Desktop\Poker-bot-main\backend
@@ -208,8 +208,8 @@ python test_live_analyze_flow.py
 
 ### Visualizza screenshot catturati:
 ```
-https://poker-ai-assist.preview.emergentagent.com/api/table/1/screenshot
-https://poker-ai-assist.preview.emergentagent.com/api/table/1/screenshot?debug=true
+https://poker-assistant-2.preview.emergentagent.com/api/table/1/screenshot
+https://poker-assistant-2.preview.emergentagent.com/api/table/1/screenshot?debug=true
 ```
 
 ---

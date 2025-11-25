@@ -20,7 +20,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 
-API_URL = "https://poker-ai-assist.preview.emergentagent.com/api"
+API_URL = "https://poker-assistant-2.preview.emergentagent.com/api"
 
 
 def get_recognized_cards() -> Dict[str, Any]:

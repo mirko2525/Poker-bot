@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any
 
 
-API_URL = "https://poker-ai-assist.preview.emergentagent.com/api/poker/live/analyze"
+API_URL = "https://poker-assistant-2.preview.emergentagent.com/api/poker/live/analyze"
 
 
 def test_scenario(name: str, table_state: Dict[str, Any]) -> None:
