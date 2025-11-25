@@ -54,6 +54,7 @@ class Decision(BaseModel):
     reason: Optional[str] = Field(default=None, description="Reason for the decision")
     equity: float = Field(..., description="Calculated equity percentage")
     pot_odds: Optional[float] = Field(default=None, description="Pot odds percentage")
+    ai_analysis: Optional[str] = Field(default=None, description="AI-powered analysis in Italian")
 
 
 class DemoResponse(BaseModel):
