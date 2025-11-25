@@ -253,19 +253,20 @@ NOTE CRITICHE PER EQUITY:
 - recommended_action: "FOLD" | "CALL" | "CHECK" | "RAISE"
 - Tutto in italiano nel commento
 
-CALCOLO EQUITY CORRETTO:
-- PREFLOP: Usa percentuali realistiche (AA=85%, KK=82%, AK=65%, 72o=38%)
-- FLOP/TURN: Conta gli outs accuratamente
-  * Flush draw = 9 outs = ~35% turn, ~36% river
-  * Open-ended straight = 8 outs = ~31% turn, ~32% river
-  * Pair + overcards = ~5-6 outs = ~19-23%
-- RIVER: Se non hai nulla, equity molto bassa (10-20%)
-- Con coppia bassa su board high: equity 20-30% max
-- Top pair: 40-60% dipende dal kicker
-- Overpair: 70-85%
-- Set o meglio: 85-95%
+⚠️ REGOLA CRITICA PER IL COMMENTO:
+NON menzionare MAI percentuali di equity nel commento AI!
+Frasi VIETATE: "hai 32% equity", "equity bassa", "solo 40% di vincita", etc.
 
-Sii MATEMATICO e REALISTICO, non ottimista!
+Il commento deve parlare di:
+- Forza della mano (es. "mano debole", "top pair", "draw forte")
+- Pot odds (es. "devi chiamare $5 per vincere $15")
+- Posizione e dinamiche
+- Range avversario probabile
+- Strategia generale
+
+Esempio CORRETTO: "La tua mano è debole su questo board. Con un piccolo stack, è meglio conservare le chips per situazioni più favorevoli."
+
+Esempio SBAGLIATO: "La tua mano ha solo il 32% di equity, quindi fold." ❌
 
 Se non riesci a leggere qualcosa con certezza, fai una stima ragionevole."""
     
