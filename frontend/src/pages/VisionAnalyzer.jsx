@@ -141,23 +141,12 @@ const VisionAnalyzer = () => {
               </div>
             )}
 
-            <Button
-              onClick={handleAnalyze}
-              disabled={!selectedFile || analyzing}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
-            >
-              {analyzing ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  <span>Analisi in corso...</span>
-                </>
-              ) : (
-                <>
-                  <span className="mr-2">🧠</span>
-                  <span>Analizza con AI</span>
-                </>
-              )}
-            </Button>
+            {analyzing && (
+              <div className="flex items-center justify-center gap-3 bg-blue-600/20 border border-blue-500 rounded-lg p-6">
+                <span className="animate-spin text-3xl">⏳</span>
+                <span className="text-xl text-blue-400 font-semibold">Analisi AI in corso...</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
