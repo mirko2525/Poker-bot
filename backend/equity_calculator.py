@@ -109,9 +109,10 @@ class EquityCalculator:
             # Simula mani avversari
             opponent_scores = []
             for _ in range(num_opponents):
-                if len(deck.cards) >= 2:
-                    opp_hand = deck.draw(2)
-                    opp_score = self.evaluator.evaluate(current_board, opp_hand)
+                if len(deck) >= 2:
+                    opp_hand = deck[:2]
+                    deck = deck[2:]
+                    opp_score = self.evaluator.evaluate(opp_hand, current_board)
                     opponent_scores.append(opp_score)
             
             # Confronta (score più basso = mano migliore in treys)
