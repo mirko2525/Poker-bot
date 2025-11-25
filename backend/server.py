@@ -36,6 +36,10 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Import Vision Analyzer Router (nuovo sistema separato)
+from vision_analyzer_api import vision_router
+api_router.include_router(vision_router)
+
 
 # Define Models for Poker Bot
 class HandState(BaseModel):
