@@ -292,7 +292,7 @@ def main():
     print("🎴 Avvio overlay desktop con analisi AI in tempo reale...")
     print(f"🔄 Aggiornamento automatico ogni 3 secondi")
     print(f"🧠 AI Brain: Groq Llama-3.3-70B")
-    print(f"📡 Backend: http://localhost:8001")
+    print(f"📡 Backend: https://ee995408-c4e3-44e3-8067-f634e9d33e68.preview.emergentagent.com")
     print("\n" + "─" * 70)
     print("💡 L'overlay apparirà sempre on top sopra i tavoli poker.")
     print("   Mostra: azione consigliata, equity, confidenza, commento AI")
