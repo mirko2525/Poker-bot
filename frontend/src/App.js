@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 import './App.css';
 
+// Import Vision Analyzer (nuovo sistema separato)
+import VisionAnalyzer from './pages/VisionAnalyzer';
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
