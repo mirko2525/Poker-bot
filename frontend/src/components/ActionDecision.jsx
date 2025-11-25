@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 const ActionDecision = ({ decision, className = "" }) => {
   if (!decision) return null;
 
-  const { action, raise_amount, reason, equity } = decision;
+  const { action, raise_amount, reason, equity, ai_analysis } = decision;
   
   const getActionStyle = () => {
     switch (action) {
