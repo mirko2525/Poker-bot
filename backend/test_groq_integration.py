@@ -4,9 +4,13 @@ Test script per verificare l'integrazione Groq AI nel poker bot
 """
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Load environment variables
+load_dotenv(Path(__file__).parent / '.env')
 
 from poker_ai_advisor import PokerAIAdvisor
 
