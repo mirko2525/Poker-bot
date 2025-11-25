@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the complete poker bot demo workflow on http://localhost:3000 including initial page verification, demo start flow, hand analysis testing, UI elements verification, and demo completion."
+user_problem_statement: "Integrazione Groq Cloud (Llama-3.3-70B) nel poker bot per fornire analisi AI delle mani in italiano. L'AI deve analizzare la situazione di gioco (carte hero, board, pot, stack, equity) e fornire consigli strategici dettagliati mostrati nel frontend."
 
 frontend:
   - task: "Initial Page Load and Header Verification"
