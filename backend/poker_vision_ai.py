@@ -46,9 +46,26 @@ class PokerVisionAI:
         self.provider = "gemini"
     
     def _encode_image_base64(self, image_path: str) -> str:
-        """Converte immagine in base64."""
-        with open(image_path, "rb") as f:
-            return base64.b64encode(f.read()).decode('utf-8')
+        """Converte immagine in base64, con resize se troppo grande."""
+        from PIL import Image
+        import io
+        
+        # Carica immagine
+        img = Image.open(image_path)
+        
+        # Resize se troppo grande (Gemini preferisce immagini più piccole)
+        max_size = 2048
+        if img.width > max_size or img.height > max_size:
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+            print(f"   Immagine ridimensionata a {img.width}x{img.height}")
+        
+        # Converti in JPG per ridurre dimensione
+        buffer = io.BytesIO()
+        img = img.convert("RGB")  # Rimuovi alpha channel se presente
+        img.save(buffer, format="JPEG", quality=85)
+        buffer.seek(0)
+        
+        return base64.b64encode(buffer.read()).decode('utf-8')
     
     async def analyze_poker_table(
         self,
