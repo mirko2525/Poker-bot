@@ -72,3 +72,4 @@ groq
 opencv-python
 emergentintegrations
 treys
+deuces
