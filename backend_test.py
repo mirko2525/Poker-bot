@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://tablecalib-tool.preview.emergentagent.com/api"
+BACKEND_URL = "https://poker-ai-assist.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
