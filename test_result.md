@@ -278,14 +278,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Initial Page Load and Header Verification"
-    - "Demo Start Flow"
-    - "Hand Analysis and Next Hand Flow"
-    - "UI Components Rendering"
-    - "Demo Completion Flow"
+    - "Groq AI Integration - Backend Setup"
+    - "Groq AI Integration - API Endpoint Update"
+    - "Groq AI Frontend Display"
   stuck_tasks: []
-  test_all: true
-  test_priority: "sequential"
+  test_all: false
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
