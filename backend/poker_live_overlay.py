@@ -10,7 +10,7 @@ Integrazione end-to-end:
 REQUISITI (sul PC desktop):
 - pip install PyQt5
 - pip install requests
-- Backend attivo su localhost:8001
+- Backend attivo su Emergent Cloud
 
 USO:
 python poker_live_overlay.py
