@@ -985,6 +985,44 @@ async def get_table_screenshot(table_id: str, debug: bool = False):
     return FileResponse(screenshot_path, media_type="image/png")
 
 
+@api_router.get("/table/{table_id}/cards/images")
+async def get_extracted_cards(table_id: str):
+    """
+    Mostra le singole carte estratte dallo screenshot.
+    Utile per debug del riconoscimento.
+    """
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+    
+    screens_dir = ROOT_DIR / "data" / "screens"
+    
+    # Lista tutti i file hero_*.png e board_*.png
+    hero_files = sorted(screens_dir.glob("hero_*.png"))
+    board_files = sorted(screens_dir.glob("board_*.png"))
+    
+    files = {
+        "hero": [str(f.name) for f in hero_files],
+        "board": [str(f.name) for f in board_files]
+    }
+    
+    return files
+
+
+@api_router.get("/table/{table_id}/cards/image/{card_name}")
+async def get_single_card_image(table_id: str, card_name: str):
+    """Visualizza una singola carta estratta (es: hero_1.png)"""
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+    
+    screens_dir = ROOT_DIR / "data" / "screens"
+    card_path = screens_dir / card_name
+    
+    if not card_path.exists():
+        raise HTTPException(status_code=404, detail="Card image not found")
+    
+    return FileResponse(card_path, media_type="image/png")
+
+
 @api_router.post("/table/{table_id}/upload")
 async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)):
     """
