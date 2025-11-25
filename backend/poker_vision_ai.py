@@ -222,14 +222,12 @@ Identifica:
 Poi fornisci:
 - **Azione consigliata**: FOLD, CALL, CHECK o RAISE
 - **Importo raise** (se RAISE, quanto in dollari, altrimenti 0)
-- **Equity stimata** (IMPORTANTE: calcola matematicamente la probabilità di vincita)
-  * PREFLOP: usa tabelle equity standard (es. AA = 85%, 72o = 35%)
-  * POSTFLOP: conta outs e calcola equity precisa
-  * Con draw: conta carte che migliorano la mano
-  * Made hand: valuta probabilità che l'avversario abbia meglio
-  * Sii REALISTICO e MATEMATICO, non ottimista
+- **Equity stimata** (metti un valore ragionevole 0-1, verrà ricalcolato matematicamente dopo)
 - **Confidenza** (quanto sei sicuro 0-1, esempio 0.80 = molto sicuro)
 - **Commento AI** (spiegazione breve in italiano, 3-5 frasi)
+  ⚠️ IMPORTANTE: NON menzionare percentuali di equity nel commento!
+  L'equity verrà calcolata matematicamente dopo, quindi non scrivere "hai 32% equity" o simili.
+  Concentrati su: forza mano, pot odds, posizione, range avversario, strategia.
 
 Rispondi SOLO con questo JSON (niente altro testo):
 
