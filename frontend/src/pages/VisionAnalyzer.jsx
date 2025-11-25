@@ -57,39 +57,7 @@ const VisionAnalyzer = () => {
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!selectedFile) {
-      setError('Seleziona prima uno screenshot');
-      return;
-    }
-
-    setAnalyzing(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      const API_URL = process.env.REACT_APP_BACKEND_URL || '';
-      const response = await fetch(`${API_URL}/api/vision/analyze`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Errore HTTP: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setResult(data.analysis);
-    } catch (err) {
-      setError(err.message || 'Errore durante l\'analisi');
-      console.error('Errore analisi:', err);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
+  // Rimosso handleAnalyze - ora l'analisi parte automaticamente
 
   const getActionColor = (action) => {
     const colors = {
