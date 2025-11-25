@@ -104,7 +104,7 @@ class EquityCalculator:
                 deck = deck[cards_needed:]
             
             # Valuta mano hero
-            hero_score = self.evaluator.evaluate(current_board, hero)
+            hero_score = self.evaluator.evaluate(hero, current_board)
             
             # Simula mani avversari
             opponent_scores = []
