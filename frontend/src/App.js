@@ -401,6 +401,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<PokerBotDemo />} />
+          <Route path="/vision" element={<VisionAnalyzer />} />
         </Routes>
       </BrowserRouter>
     </div>
