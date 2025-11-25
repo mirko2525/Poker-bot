@@ -24,42 +24,24 @@ class EquityCalculator:
     
     def _parse_card(self, card_str: str) -> int:
         """
-        Converte carta da formato stringa a formato treys.
+        Converte carta da formato stringa a formato deuces.
         
         Input: "As", "Kh", "7c", etc.
-        Output: int (formato treys)
+        Output: int (formato deuces)
         
         Args:
             card_str: Carta in formato "RankSuit" (es. "As" = Asso di Picche)
         
         Returns:
-            Card in formato treys
+            Card in formato deuces
         """
         if not card_str or len(card_str) != 2:
             raise ValueError(f"Formato carta invalido: {card_str}")
         
-        # Mappa rank
-        rank_map = {
-            '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
-            '7': '7', '8': '8', '9': '9', 'T': 'T', 't': 'T',
-            'J': 'J', 'j': 'J', 'Q': 'Q', 'q': 'Q',
-            'K': 'K', 'k': 'K', 'A': 'A', 'a': 'A'
-        }
+        rank = card_str[0].upper()
+        suit = card_str[1].lower()
         
-        # Mappa suit
-        suit_map = {
-            's': 's', 'S': 's',  # Spades (Picche)
-            'h': 'h', 'H': 'h',  # Hearts (Cuori)
-            'd': 'd', 'D': 'd',  # Diamonds (Quadri)
-            'c': 'c', 'C': 'c'   # Clubs (Fiori)
-        }
-        
-        rank = rank_map.get(card_str[0])
-        suit = suit_map.get(card_str[1])
-        
-        if not rank or not suit:
-            raise ValueError(f"Carta non valida: {card_str}")
-        
+        # Deuces usa formato come "As", "Kh", etc
         return Card.new(rank + suit)
     
     def calculate_equity(
