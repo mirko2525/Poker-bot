@@ -148,28 +148,9 @@ class PokerVisionAI:
             # Normalizza azione
             result["recommended_action"] = result["recommended_action"].upper()
             
-            # 🎯 CALCOLO EQUITY MATEMATICO (sostituisce stima AI)
-            if len(result["hero_cards"]) == 2 and len(result["board_cards"]) <= 5:
-                try:
-                    # Calcola equity con Monte Carlo
-                    equity_math = self.equity_calc.get_equity_percentage(
-                        result["hero_cards"],
-                        result["board_cards"],
-                        num_opponents=1
-                    )
-                    
-                    # Sostituisci equity AI con equity matematica
-                    result["equity_estimate_ai"] = result["equity_estimate"]  # Backup
-                    result["equity_estimate"] = equity_math
-                    result["equity_method"] = "monte_carlo"
-                    
-                    print(f"   🎲 Equity calcolata: {equity_math*100:.1f}% (Monte Carlo)")
-                    
-                except Exception as e:
-                    print(f"   ⚠️ Fallback su equity AI: {e}")
-                    result["equity_method"] = "ai_estimate"
-            else:
-                result["equity_method"] = "ai_estimate"
+            # 🎯 Usa EQUITY AI (considera range, posizione, azione)
+            result["equity_method"] = "ai_contextual"
+            print(f"   🧠 Equity AI: {result['equity_estimate']*100:.1f}% (considera range avversario)")
             
             # Aggiungi metadata
             result["table_id"] = table_id
