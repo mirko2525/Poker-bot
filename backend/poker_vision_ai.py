@@ -44,9 +44,6 @@ class PokerVisionAI:
         # Usa Gemini 2.0 Flash (veloce e gratis)
         self.model = "gemini-2.0-flash"
         self.provider = "gemini"
-        
-        # Equity calculator matematico (Monte Carlo)
-        self.equity_calc = EquityCalculator()
     
     def _encode_image_base64(self, image_path: str) -> str:
         """Converte immagine in base64, con resize se troppo grande."""
