@@ -220,13 +220,27 @@ Rispondi SOLO con questo JSON (niente altro testo):
   "ai_comment": "La tua mano non ha migliorato con questo board. Con solo overcard e pot odds sfavorevoli (29%), il fold è la scelta corretta per preservare lo stack."
 }
 
-NOTE:
+NOTE CRITICHE PER EQUITY:
 - hero_cards: array di 2 stringhe (es. ["Qs", "Jc"])
 - board_cards: array di 0-5 stringhe
 - street: "PREFLOP" | "FLOP" | "TURN" | "RIVER"
 - Valori numerici: float
 - recommended_action: "FOLD" | "CALL" | "CHECK" | "RAISE"
 - Tutto in italiano nel commento
+
+CALCOLO EQUITY CORRETTO:
+- PREFLOP: Usa percentuali realistiche (AA=85%, KK=82%, AK=65%, 72o=38%)
+- FLOP/TURN: Conta gli outs accuratamente
+  * Flush draw = 9 outs = ~35% turn, ~36% river
+  * Open-ended straight = 8 outs = ~31% turn, ~32% river
+  * Pair + overcards = ~5-6 outs = ~19-23%
+- RIVER: Se non hai nulla, equity molto bassa (10-20%)
+- Con coppia bassa su board high: equity 20-30% max
+- Top pair: 40-60% dipende dal kicker
+- Overpair: 70-85%
+- Set o meglio: 85-95%
+
+Sii MATEMATICO e REALISTICO, non ottimista!
 
 Se non riesci a leggere qualcosa con certezza, fai una stima ragionevole."""
     
