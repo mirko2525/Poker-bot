@@ -8,7 +8,7 @@ Molto più preciso della "stima" dell'AI!
 """
 import random
 from typing import List, Tuple
-from treys import Card, Evaluator, Deck
+from deuces import Card, Evaluator
 
 
 class EquityCalculator:
