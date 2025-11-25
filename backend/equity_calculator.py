@@ -99,7 +99,9 @@ class EquityCalculator:
             current_board = board.copy()
             cards_needed = 5 - len(current_board)
             if cards_needed > 0:
-                current_board.extend(deck.draw(cards_needed))
+                drawn_cards = deck[:cards_needed]
+                current_board.extend(drawn_cards)
+                deck = deck[cards_needed:]
             
             # Valuta mano hero
             hero_score = self.evaluator.evaluate(current_board, hero)
