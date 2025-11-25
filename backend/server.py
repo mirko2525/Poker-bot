@@ -95,6 +95,32 @@ class TableEquityResponse(BaseModel):
     error: Optional[str] = None
 
 
+# NEW: Models for Live Analyze (AI Brain)
+class LiveTableState(BaseModel):
+    """Input model per /api/poker/live/analyze"""
+    table_id: int = Field(..., description="ID del tavolo")
+    hero_cards: List[str] = Field(..., description="Carte dell'hero (es. ['As', 'Kd'])")
+    board_cards: List[str] = Field(default=[], description="Carte sul board")
+    hero_stack: float = Field(..., description="Stack hero in dollari")
+    pot_size: float = Field(..., description="Dimensione piatto")
+    to_call: float = Field(..., description="Quanto bisogna chiamare")
+    position: str = Field(..., description="Posizione (BTN, SB, BB, EP, MP, CO)")
+    players: int = Field(..., description="Numero giocatori in mano")
+    street: str = Field(..., description="Fase: PREFLOP, FLOP, TURN, RIVER")
+    last_action: str = Field(..., description="Ultima azione (es. 'villain_bet')")
+    big_blind: float = Field(default=1.0, description="Valore big blind")
+
+
+class LiveAnalysisResponse(BaseModel):
+    """Output model per /api/poker/live/analyze"""
+    table_id: int
+    recommended_action: str = Field(..., description="FOLD, CALL, or RAISE")
+    recommended_amount: float = Field(..., description="Importo in dollari (0 se FOLD/CALL)")
+    equity_estimate: float = Field(..., description="Stima equity 0-1")
+    confidence: float = Field(..., description="Livello confidenza 0-1")
+    ai_comment: str = Field(..., description="Spiegazione AI in italiano")
+
+
 def build_table_cards_response(table_id: str) -> "TableCardsResponse":
     """Costruisce la risposta TableCardsResponse a partire da TABLE_STATE."""
     state = TABLE_STATE
@@ -865,6 +891,63 @@ async def get_demo_status():
         "total_hands": len(mock_state_provider.mock_hands),
         "has_next": mock_state_provider.has_next(),
     }
+
+
+# NEW: Live Analyze Endpoint - Il "cervello" del sistema
+@api_router.post("/poker/live/analyze", response_model=LiveAnalysisResponse)
+async def live_analyze(table_state: LiveTableState):
+    """
+    🧠 ENDPOINT PRINCIPALE - Live Poker Analysis
+    
+    Riceve lo stato del tavolo (screenshot → JSON) e ritorna:
+    - Azione consigliata (FOLD/CALL/RAISE)
+    - Importo raise
+    - Stima equity
+    - Livello confidenza
+    - Commento AI in italiano
+    
+    Questo endpoint sostituisce il vecchio flusso:
+    - Vecchio: screenshot → equity_engine → decision_engine → (forse) AI
+    - Nuovo: screenshot → stato JSON → AI Groq (fa tutto) → overlay
+    """
+    if not ai_advisor:
+        raise HTTPException(
+            status_code=503,
+            detail="AI Advisor non disponibile. Verificare GROQ_API_KEY."
+        )
+    
+    try:
+        # Converti Pydantic model a dict
+        table_dict = table_state.model_dump()
+        
+        # Chiama l'AI brain
+        logger.info(f"🧠 Analyzing table {table_state.table_id} - {table_state.street} - Hero: {table_state.hero_cards}")
+        result = ai_advisor.analyze_table_state(table_dict)
+        
+        # Costruisci risposta
+        response = LiveAnalysisResponse(
+            table_id=table_state.table_id,
+            recommended_action=result["recommended_action"],
+            recommended_amount=result["recommended_amount"],
+            equity_estimate=result["equity_estimate"],
+            confidence=result["confidence"],
+            ai_comment=result["ai_comment"]
+        )
+        
+        logger.info(
+            f"✅ Analysis complete for table {table_state.table_id}: "
+            f"{response.recommended_action} (equity: {response.equity_estimate*100:.1f}%, "
+            f"confidence: {response.confidence*100:.1f}%)"
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Error in live analyze: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Errore nell'analisi AI: {str(e)}"
+        )
 
 
 @api_router.get("/table/{table_id}/cards", response_model=TableCardsResponse)

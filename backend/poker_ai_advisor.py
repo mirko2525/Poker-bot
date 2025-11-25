@@ -1,9 +1,14 @@
 """
 Poker AI Advisor using Groq Cloud (Llama-3.3-70B)
 Analizza la situazione di gioco e fornisce consigli in italiano
+
+NUOVA ARCHITETTURA:
+- analyze_table_state(): Il "cervello" che riceve JSON stato tavolo e ritorna decisione completa
+- analyze_hand(): Metodo legacy per la demo (manteniamo per retrocompatibilità)
 """
 import os
-from typing import List, Optional
+import json
+from typing import List, Optional, Dict, Any
 from groq import Groq
 
 
@@ -166,6 +171,172 @@ Rispondi in italiano, massimo 4-5 frasi."""
         
         return prompt
     
+    def analyze_table_state(self, table_state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        NUOVO METODO - Il "cervello" dell'advisor.
+        
+        Riceve lo stato completo del tavolo e ritorna:
+        - Azione consigliata (FOLD/CALL/RAISE)
+        - Importo del raise
+        - Stima equity (0-1)
+        - Livello di confidenza (0-1)
+        - Commento AI in italiano
+        
+        Args:
+            table_state: Dizionario con:
+                - table_id: ID del tavolo
+                - hero_cards: Lista carte hero (es. ["As", "Kd"])
+                - board_cards: Lista carte board (es. ["7h", "8h", "2c"])
+                - hero_stack: Stack dell'hero in dollari
+                - pot_size: Dimensione piatto in dollari
+                - to_call: Quanto bisogna chiamare
+                - position: Posizione (es. "BTN", "SB", "BB", "EP", "MP", "CO")
+                - players: Numero giocatori in mano
+                - street: Fase (PREFLOP, FLOP, TURN, RIVER)
+                - last_action: Ultima azione avversario (es. "villain_bet", "villain_raise")
+                - big_blind: Valore del big blind (opzionale, default 1.0)
+        
+        Returns:
+            Dizionario con:
+                - recommended_action: "FOLD" | "CALL" | "RAISE"
+                - recommended_amount: float (0 se FOLD/CALL)
+                - equity_estimate: float (0-1)
+                - confidence: float (0-1)
+                - ai_comment: str (spiegazione in italiano)
+        """
+        # Costruisci prompt per Groq
+        prompt = self._build_table_analysis_prompt(table_state)
+        
+        try:
+            # Chiamata a Groq
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Sei un coach esperto di poker Texas Hold'em. "
+                            "Analizza lo stato del tavolo e rispondi SOLO con JSON valido. "
+                            "Non aggiungere testo extra, solo il JSON richiesto."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.2,  # Basso per risposte più consistenti
+                max_completion_tokens=600,
+                top_p=0.9,
+                stream=False
+            )
+            
+            # Estrai risposta
+            raw_response = completion.choices[0].message.content.strip()
+            
+            # Prova a parsare JSON
+            # Groq potrebbe wrappare il JSON in ```json ... ```, rimuoviamo
+            if raw_response.startswith("```"):
+                # Trova il contenuto tra i backticks
+                lines = raw_response.split("\n")
+                json_lines = []
+                in_json = False
+                for line in lines:
+                    if line.strip().startswith("```"):
+                        in_json = not in_json
+                        continue
+                    if in_json:
+                        json_lines.append(line)
+                raw_response = "\n".join(json_lines)
+            
+            result = json.loads(raw_response)
+            
+            # Validazione campi obbligatori
+            required_fields = ["recommended_action", "recommended_amount", "equity_estimate", "confidence", "ai_comment"]
+            for field in required_fields:
+                if field not in result:
+                    raise ValueError(f"Campo mancante nella risposta AI: {field}")
+            
+            # Normalizza l'azione
+            result["recommended_action"] = result["recommended_action"].upper()
+            
+            return result
+            
+        except json.JSONDecodeError as e:
+            # Fallback se JSON parsing fallisce
+            print(f"⚠️ Errore parsing JSON da Groq: {e}")
+            print(f"Raw response: {raw_response[:200]}...")
+            return self._create_fallback_response(table_state)
+        
+        except Exception as e:
+            # Fallback generico
+            print(f"⚠️ Errore nell'analisi AI: {e}")
+            return self._create_fallback_response(table_state)
+    
+    def _build_table_analysis_prompt(self, table_state: Dict[str, Any]) -> str:
+        """Costruisce il prompt per l'analisi del tavolo."""
+        
+        # Formatta carte
+        hero_str = ", ".join(table_state.get("hero_cards", [])) or "Non note"
+        board_str = ", ".join(table_state.get("board_cards", [])) or "Nessuna carta"
+        
+        # Calcola pot odds se possibile
+        to_call = table_state.get("to_call", 0)
+        pot_size = table_state.get("pot_size", 0)
+        pot_odds = (to_call / (pot_size + to_call) * 100) if (pot_size + to_call) > 0 else 0
+        
+        # Stack in BB
+        bb = table_state.get("big_blind", 1.0)
+        stack_bb = table_state.get("hero_stack", 100) / bb
+        
+        prompt = f"""Analizza questo stato di tavolo poker e rispondi SOLO in formato JSON.
+
+STATO TAVOLO:
+- Tavolo ID: {table_state.get("table_id", "1")}
+- Fase: {table_state.get("street", "PREFLOP")}
+- Tue carte: {hero_str}
+- Board: {board_str}
+- Piatto: ${pot_size:.2f}
+- Da chiamare: ${to_call:.2f}
+- Tuo stack: ${table_state.get("hero_stack", 100):.2f} ({stack_bb:.1f} BB)
+- Posizione: {table_state.get("position", "Unknown")}
+- Giocatori in mano: {table_state.get("players", 2)}
+- Ultima azione avversario: {table_state.get("last_action", "unknown")}
+- Pot odds: {pot_odds:.1f}%
+
+RISPONDI SOLO CON QUESTO JSON (niente altro testo):
+
+{{
+  "recommended_action": "FOLD|CALL|RAISE",
+  "recommended_amount": 0.0,
+  "equity_estimate": 0.5,
+  "confidence": 0.7,
+  "ai_comment": "Spiegazione breve in italiano (3-5 frasi): analisi mano, considerazioni strategiche, ragionamento decisione."
+}}
+
+REGOLE:
+- recommended_action: deve essere "FOLD", "CALL" o "RAISE"
+- recommended_amount: importo in dollari del raise (0 se FOLD o CALL)
+- equity_estimate: probabilità di vincere a showdown (0.0 a 1.0)
+- confidence: quanto sei sicuro della decisione (0.0 a 1.0)
+- ai_comment: spiegazione concisa in italiano
+
+Rispondi SOLO con il JSON, niente altro."""
+        
+        return prompt
+    
+    def _create_fallback_response(self, table_state: Dict[str, Any]) -> Dict[str, Any]:
+        """Crea una risposta fallback se l'AI fallisce."""
+        to_call = table_state.get("to_call", 0)
+        
+        return {
+            "recommended_action": "CALL" if to_call > 0 else "CHECK",
+            "recommended_amount": to_call,
+            "equity_estimate": 0.5,
+            "confidence": 0.3,
+            "ai_comment": "⚠️ Analisi AI temporaneamente non disponibile. Usando strategia conservativa: call/check per vedere la prossima carta."
+        }
+    
     async def analyze_hand_async(self, *args, **kwargs) -> str:
         """Versione async dell'analisi (per compatibilità futura)."""
         # Per ora, Groq sync è sufficientemente veloce
@@ -175,22 +346,47 @@ Rispondi in italiano, massimo 4-5 frasi."""
 
 # Esempio di utilizzo
 if __name__ == "__main__":
-    # Test del servizio
+    from dotenv import load_dotenv
+    from pathlib import Path
+    
+    # Load env
+    load_dotenv(Path(__file__).parent / '.env')
+    
+    # Test del NUOVO metodo analyze_table_state
     advisor = PokerAIAdvisor()
     
-    analysis = advisor.analyze_hand(
-        hero_cards=["As", "Ah"],
-        board_cards=[],
-        pot_size=3.0,
-        to_call=2.0,
-        hero_stack=100.0,
-        big_blind=1.0,
-        players_in_hand=3,
-        phase="PREFLOP",
-        equity=85.0,
-        suggested_action="RAISE",
-        raise_amount=6.0
-    )
+    print("=" * 60)
+    print("TEST NUOVO METODO: analyze_table_state()")
+    print("=" * 60)
     
-    print("🤖 Analisi AI:")
-    print(analysis)
+    table_state = {
+        "table_id": 1,
+        "hero_cards": ["As", "Kd"],
+        "board_cards": ["7h", "8h", "2c"],
+        "hero_stack": 95.50,
+        "pot_size": 9.00,
+        "to_call": 3.00,
+        "position": "BTN",
+        "players": 3,
+        "street": "FLOP",
+        "last_action": "villain_bet",
+        "big_blind": 1.0
+    }
+    
+    print("\n📊 Input stato tavolo:")
+    print(json.dumps(table_state, indent=2, ensure_ascii=False))
+    
+    print("\n🤖 Chiamata a Groq AI...")
+    result = advisor.analyze_table_state(table_state)
+    
+    print("\n✅ Risultato analisi:")
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    
+    print("\n" + "=" * 60)
+    print(f"Azione consigliata: {result['recommended_action']}")
+    if result['recommended_action'] == 'RAISE':
+        print(f"Importo raise: ${result['recommended_amount']:.2f}")
+    print(f"Equity stimata: {result['equity_estimate']*100:.1f}%")
+    print(f"Confidenza: {result['confidence']*100:.1f}%")
+    print(f"\n💬 Commento AI:\n{result['ai_comment']}")
+    print("=" * 60)
