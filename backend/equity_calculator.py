@@ -90,8 +90,12 @@ class EquityCalculator:
         
         # Monte Carlo simulation
         for _ in range(num_simulations):
-            # Crea deck completo e rimuovi carte conosciute
-            full_deck = Card.get_full_deck()
+            # Crea deck completo manualmente
+            ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+            suits = ['s', 'h', 'd', 'c']
+            full_deck = [Card.new(r + s) for r in ranks for s in suits]
+            
+            # Rimuovi carte conosciute
             deck = [c for c in full_deck if c not in known_cards]
             random.shuffle(deck)
             
