@@ -196,6 +196,36 @@ frontend:
           comment: "✅ PASSED: Demo completion flow works correctly. After cycling through all 6 hands, 'Demo Complete' message appears with Italian text 'Fine DEMO 1 – Nessun'altra mano disponibile'. 'Restart Demo' button is visible and functional. Minor: Restart functionality has a small issue where it doesn't immediately return to the initial welcome screen, but this doesn't affect core demo functionality."
 
 backend:
+  - task: "Groq AI Integration - Backend Setup"
+    implemented: true
+    working: true
+    file: "/app/backend/poker_ai_advisor.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Installazione libreria groq, configurazione API key in .env, creazione servizio PokerAIAdvisor con Llama-3.3-70B"
+        - working: true
+          agent: "main"
+          comment: "✅ COMPLETATO: Libreria groq installata, API key configurata in .env, servizio PokerAIAdvisor creato con supporto per analisi in italiano. Test manuali confermano funzionamento corretto con 3 scenari (AA preflop, flush draw flop, weak river). AI fornisce analisi dettagliate di 4-5 frasi in italiano."
+
+  - task: "Groq AI Integration - API Endpoint Update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Aggiornamento endpoint /api/poker/demo/next per includere analisi AI nella risposta Decision"
+        - working: true
+          agent: "main"
+          comment: "✅ COMPLETATO: Endpoint aggiornato, modello Decision esteso con campo ai_analysis, integrazione con PokerAIAdvisor funzionante. Test curl conferma che l'AI risponde correttamente in italiano con analisi strategiche dettagliate."
+
   - task: "Poker Bot API Endpoints"
     implemented: true
     working: true
