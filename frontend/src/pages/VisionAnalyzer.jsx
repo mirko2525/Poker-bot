@@ -15,13 +15,45 @@ const VisionAnalyzer = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleFileSelect = (event) => {
+  const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setResult(null);
       setError(null);
+      
+      // Avvia analisi automaticamente
+      await analyzeFile(file);
+    }
+  };
+  
+  const analyzeFile = async (file) => {
+    setAnalyzing(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+      const response = await fetch(`${API_URL}/api/vision/analyze`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Errore HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setResult(data.analysis);
+    } catch (err) {
+      setError(err.message || 'Errore durante l\'analisi');
+      console.error('Errore analisi:', err);
+    } finally {
+      setAnalyzing(false);
     }
   };
 
