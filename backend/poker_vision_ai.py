@@ -17,7 +17,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-from equity_calculator import EquityCalculator
 
 
 class PokerVisionAI:
