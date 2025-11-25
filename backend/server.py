@@ -583,9 +583,9 @@ decision_engine = DecisionEngine()
 from poker_ai_advisor import PokerAIAdvisor
 try:
     ai_advisor = PokerAIAdvisor()
-    logger.info("✅ Groq AI Advisor initialized successfully")
+    print("✅ Groq AI Advisor initialized successfully")
 except Exception as e:
-    logger.warning(f"⚠️ AI Advisor initialization failed: {e}. Will continue without AI analysis.")
+    print(f"⚠️ AI Advisor initialization failed: {e}. Will continue without AI analysis.")
     ai_advisor = None
 
 # Initialize table recognition components (Fase tavolo reale)
