@@ -579,6 +579,15 @@ mock_state_provider = MockStateProvider()
 equity_engine = MockEquityEngine(enable_random=True)  # Randomness per web demo
 decision_engine = DecisionEngine()
 
+# Initialize AI Advisor (Groq Cloud integration)
+from poker_ai_advisor import PokerAIAdvisor
+try:
+    ai_advisor = PokerAIAdvisor()
+    logger.info("✅ Groq AI Advisor initialized successfully")
+except Exception as e:
+    logger.warning(f"⚠️ AI Advisor initialization failed: {e}. Will continue without AI analysis.")
+    ai_advisor = None
+
 # Initialize table recognition components (Fase tavolo reale)
 TABLE_SCREEN_PATH = ROOT_DIR / "data" / "screens" / "table1.png"
 TABLE_DEBUG_PATH = ROOT_DIR / "data" / "screens" / "table1_debug.png"
