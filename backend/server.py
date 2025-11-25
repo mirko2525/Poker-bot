@@ -827,6 +827,28 @@ async def get_next_hand():
     # Make decision
     decision = decision_engine.decide_action(hand_state, equity)
     
+    # Add AI analysis if advisor is available
+    if ai_advisor:
+        try:
+            ai_analysis = ai_advisor.analyze_hand(
+                hero_cards=hand_state.hero_cards,
+                board_cards=hand_state.board_cards,
+                pot_size=hand_state.pot_size,
+                to_call=hand_state.to_call,
+                hero_stack=hand_state.hero_stack,
+                big_blind=hand_state.big_blind,
+                players_in_hand=hand_state.players_in_hand,
+                phase=hand_state.phase,
+                equity=equity * 100,  # Convert to percentage for display
+                suggested_action=decision.action,
+                raise_amount=decision.raise_amount
+            )
+            decision.ai_analysis = ai_analysis
+            logger.info(f"✅ AI analysis generated for hand {mock_state_provider.current_index}")
+        except Exception as e:
+            logger.error(f"❌ Failed to generate AI analysis: {e}")
+            decision.ai_analysis = None
+    
     return DemoResponse(
         hand_number=mock_state_provider.current_index,
         hand_state=hand_state,
