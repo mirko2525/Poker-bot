@@ -195,7 +195,12 @@ Identifica:
 Poi fornisci:
 - **Azione consigliata**: FOLD, CALL, CHECK o RAISE
 - **Importo raise** (se RAISE, quanto in dollari, altrimenti 0)
-- **Equity stimata** (probabilità vittoria 0-1, esempio 0.65 = 65%)
+- **Equity stimata** (IMPORTANTE: calcola matematicamente la probabilità di vincita)
+  * PREFLOP: usa tabelle equity standard (es. AA = 85%, 72o = 35%)
+  * POSTFLOP: conta outs e calcola equity precisa
+  * Con draw: conta carte che migliorano la mano
+  * Made hand: valuta probabilità che l'avversario abbia meglio
+  * Sii REALISTICO e MATEMATICO, non ottimista
 - **Confidenza** (quanto sei sicuro 0-1, esempio 0.80 = molto sicuro)
 - **Commento AI** (spiegazione breve in italiano, 3-5 frasi)
 
