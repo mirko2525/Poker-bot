@@ -90,10 +90,10 @@ class EquityCalculator:
         
         # Monte Carlo simulation
         for _ in range(num_simulations):
-            # Crea deck e rimuovi carte conosciute
-            deck = Deck()
-            deck.cards = [c for c in deck.cards if c not in known_cards]
-            deck.shuffle()
+            # Crea deck completo e rimuovi carte conosciute
+            full_deck = Card.get_full_deck()
+            deck = [c for c in full_deck if c not in known_cards]
+            random.shuffle(deck)
             
             # Completa il board (se necessario)
             current_board = board.copy()
