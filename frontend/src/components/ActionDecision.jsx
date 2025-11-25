@@ -96,10 +96,25 @@ const ActionDecision = ({ decision, className = "" }) => {
           </div>
         )}
         
+        {/* AI Analysis */}
+        {ai_analysis && (
+          <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🤖</span>
+              <div className="text-xs text-blue-400 font-medium uppercase tracking-wide">
+                AI Coach - Groq Llama-3.3-70B
+              </div>
+            </div>
+            <div className="text-sm text-foreground leading-relaxed italic">
+              {ai_analysis}
+            </div>
+          </div>
+        )}
+        
         {/* Action Summary */}
         <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t border-border">
           <span>Confidence: High</span>
-          <span>Based on equity vs pot odds</span>
+          <span>Based on equity vs pot odds{ai_analysis ? ' + AI' : ''}</span>
         </div>
       </CardContent>
     </Card>
