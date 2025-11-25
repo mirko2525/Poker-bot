@@ -5,7 +5,7 @@ Elimina il template matching! L'AI vede direttamente lo screenshot
 e riconosce tutto: carte hero, board, stack, pot, fase di gioco.
 
 Architettura:
-Screenshot → Gemini Vision → JSON con carte + analisi strategica
+Screenshot → Gemini Vision → JSON con carte + Equity Calculator matematico
 """
 import os
 import base64
@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from equity_calculator import EquityCalculator
 
 
 class PokerVisionAI:
