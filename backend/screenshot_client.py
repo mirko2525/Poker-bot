@@ -32,7 +32,7 @@ except ImportError:
 
 
 # ⚠️ CONFIGURAZIONE - URL già impostato per Emergent
-API_URL = "https://poker-assistant-2.preview.emergentagent.com/api"
+API_URL = "https://ee995408-c4e3-44e3-8067-f634e9d33e68.preview.emergentagent.com/api"
 WINDOW_TITLE_KEYWORDS = ["PokerStars", "Poker Stars", "Texas Hold", "No Limit Hold"]
 SCREENSHOT_INTERVAL = 3  # Secondi tra screenshot
 TABLE_ID = 1  # ID tavolo da monitorare
