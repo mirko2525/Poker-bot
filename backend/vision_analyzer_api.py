@@ -5,6 +5,16 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from pathlib import Path
 from typing import Dict, Any
 import logging
+from equity_calculator import EquityCalculator
+from poker_config import (
+    MARGIN,
+    STRONG_EQUITY_THRESHOLD,
+    RAISE_POT_MULTIPLIER,
+    RAISE_NO_COST_MULTIPLIER,
+)
+from typing import Optional
+
+
 from shared_state import SharedState # Import memoria condivisa
 
 # Import del modulo Vision AI
