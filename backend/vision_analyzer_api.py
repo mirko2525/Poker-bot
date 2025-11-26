@@ -1,15 +1,11 @@
 """
 VISION ANALYZER API - Endpoint dedicato per analisi screenshot manuale
-
-File separato e pulito per non mischiare con il resto del codice.
-Gestisce upload screenshot e analisi con Gemini Vision.
-
-Endpoint: POST /api/vision/analyze
 """
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pathlib import Path
 from typing import Dict, Any
 import logging
+from shared_state import SharedState # Import memoria condivisa
 
 # Import del modulo Vision AI
 from poker_vision_ai import PokerVisionAI
@@ -28,21 +24,6 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 async def analyze_screenshot(file: UploadFile = File(...)) -> Dict[str, Any]:
     """
     Analizza uno screenshot di un tavolo poker con Gemini Vision AI.
-    
-    Upload manuale dall'utente (es. da iPhone).
-    
-    Args:
-        file: Immagine PNG/JPG del tavolo poker
-    
-    Returns:
-        JSON con:
-        - hero_cards: ["As", "Kd"]
-        - board_cards: ["7h", "8h", "2c"]
-        - street: "FLOP"
-        - recommended_action: "FOLD" | "CALL" | "RAISE"
-        - equity_estimate: 0.65
-        - confidence: 0.80
-        - ai_comment: "Analisi in italiano..."
     """
     try:
         # Valida tipo file
@@ -68,10 +49,10 @@ async def analyze_screenshot(file: UploadFile = File(...)) -> Dict[str, Any]:
         logger.info("🧠 Analisi con Gemini Vision...")
         result = await vision_ai.analyze_poker_table(str(temp_path), table_id=999)
         
-        logger.info(f"✅ Analisi completata: {result.get('recommended_action')}")
-        
-        # Cleanup (opzionale, tieni se vuoi vedere gli upload)
-        # temp_path.unlink()
+        # --- AGGIORNAMENTO MEMORIA PER OVERLAY ---
+        SharedState.update(result)
+        logger.info(f"✅ Analisi completata e salvata per Overlay: {result.get('recommended_action')}")
+        # -----------------------------------------
         
         return {
             "status": "success",
