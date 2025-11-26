@@ -65,6 +65,17 @@ api_router = APIRouter(prefix="/api")
 from vision_analyzer_api import vision_router
 api_router.include_router(vision_router)
 
+# --- MEMORIA GLOBALE PER OVERLAY ---
+# Qui salviamo l'ultima analisi per mostrarla nell'overlay
+LATEST_ANALYSIS = {
+    "recommended_action": "IN ATTESA",
+    "recommended_amount": 0.0,
+    "equity_estimate": 0.0,
+    "confidence": 0.0,
+    "ai_comment": "In attesa della prima mano...",
+    "timestamp": None
+}
+
 # --- MODELLI ---
 class HandState(BaseModel):
     hero_cards: List[str] = Field(..., description="Player's hole cards")
@@ -158,7 +169,6 @@ try:
     print("✅ Modulo OpenCV caricato correttamente.")
 except ImportError as e:
     print(f"⚠️ Modulo OpenCV non disponibile: {e}")
-    print("   Il riconoscimento basato su template sarà disabilitato (Vision AI funzionerà comunque).")
     RECOGNITION_AVAILABLE = False
     cv2 = None
 
@@ -278,11 +288,24 @@ except Exception as e:
 
 @api_router.post("/poker/live/analyze", response_model=LiveAnalysisResponse)
 async def live_analyze(table_state: LiveTableState):
+    global LATEST_ANALYSIS
+    
     if not ai_advisor:
         raise HTTPException(status_code=503, detail="AI Advisor non disponibile")
     
     try:
         result = ai_advisor.analyze_table_state(table_state.model_dump())
+        
+        # Salva in memoria per l'overlay
+        LATEST_ANALYSIS = {
+            "recommended_action": result["recommended_action"],
+            "recommended_amount": result["recommended_amount"],
+            "equity_estimate": result["equity_estimate"],
+            "confidence": result["confidence"],
+            "ai_comment": result["ai_comment"],
+            "timestamp": datetime.now().isoformat()
+        }
+        
         return LiveAnalysisResponse(
             table_id=table_state.table_id,
             recommended_action=result["recommended_action"],
@@ -294,6 +317,11 @@ async def live_analyze(table_state: LiveTableState):
     except Exception as e:
         logger.error(f"AI Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/poker/live/latest")
+async def get_latest_analysis():
+    """Endpoint per l'overlay desktop"""
+    return LATEST_ANALYSIS
 
 # --- ROUTES BASE ---
 @api_router.get("/")
