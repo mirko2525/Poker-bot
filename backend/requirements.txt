@@ -17,3 +17,5 @@ numpy
 mss
 pygetwindow
 PyQt5
+# Libreria per upload file (screenshot)
+python-multipart

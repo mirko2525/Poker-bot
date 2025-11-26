@@ -3,11 +3,12 @@ echo ===================================================
 echo  RIPARAZIONE DIPENDENZE POKER BOT
 echo ===================================================
 echo.
-echo Sto installando le librerie mancanti (OpenCV, Motor, ecc)...
+echo Sto installando le librerie mancanti...
+echo (OpenCV, Motor, Python-Multipart, ecc)
 echo.
 
 call venv\Scripts\activate
-pip install opencv-python motor mss pygetwindow PyQt5
+pip install opencv-python motor mss pygetwindow PyQt5 python-multipart
 
 echo.
 echo ===================================================
