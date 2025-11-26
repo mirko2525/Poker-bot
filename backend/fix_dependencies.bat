@@ -1,26 +1,20 @@
 @echo off
 echo ===================================================
-echo  RIPARAZIONE DIPENDENZE POKER BOT
+echo  RIPARAZIONE TOTALE DIPENDENZE
 echo ===================================================
 echo.
 echo 1. Attivo ambiente virtuale...
 call venv\Scripts\activate
 
 echo.
-echo 2. Installo libreria mancante CRITICA (python-multipart)...
-pip install python-multipart
-
+echo 2. Installo TUTTE le librerie necessarie...
 echo.
-echo 3. Tento di reinstallare Motor e altre dipendenze...
-pip install motor opencv-python mss pygetwindow PyQt5 uvicorn fastapi
+pip install groq emergentintegrations python-multipart opencv-python motor mss pygetwindow PyQt5 uvicorn fastapi requests python-dotenv --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 
 echo.
 echo ===================================================
 echo  RIPARAZIONE COMPLETATA!
 echo ===================================================
-echo.
-echo Se vedi ancora l'avviso su 'motor' (giallo), IGNORALO.
-echo L'importante e che non ci siano errori rossi su 'python-multipart'.
 echo.
 echo Ora riprova ad avviare: run_auto_poker.bat
 echo.
