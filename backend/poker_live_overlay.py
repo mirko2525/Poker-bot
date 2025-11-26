@@ -35,7 +35,7 @@ class Overlay(QtWidgets.QWidget):
         self.initUI()
 
         # Timer aggiornamento (ogni 1 secondo) solo per leggere l'ultima analisi
-        self.timer = QtWidgets.QTimer()
+        self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_data)
         self.timer.start(1000)
 
