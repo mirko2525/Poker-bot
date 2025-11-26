@@ -85,9 +85,9 @@ class Overlay(QtWidgets.QWidget):
         self.lbl_scale.setStyleSheet("color: #CCCCCC; font-size: 10px;")
 
         self.scale_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.scale_slider.setRange(80, 160)  # 80% - 160%
-        self.scale_slider.setValue(100)
-        self.scale_slider.setFixedWidth(110)
+        self.scale_slider.setRange(80, 220)  # 80% - 220%
+        self.scale_slider.setValue(140)
+        self.scale_slider.setFixedWidth(140)
         self.scale_slider.valueChanged.connect(self.on_scale_changed)
 
         controls_layout.addWidget(self.btn_analyze)
@@ -137,10 +137,10 @@ class Overlay(QtWidgets.QWidget):
         self.apply_scale()
 
     def apply_scale(self):
-        header_size = int(14 * self.scale_factor)
+        header_size = int(16 * self.scale_factor)
         action_size = int(24 * self.scale_factor)
-        comment_size = max(9, int(11 * self.scale_factor))
-        small_size = max(8, int(10 * self.scale_factor))
+        comment_size = max(11, int(13 * self.scale_factor))
+        small_size = max(10, int(12 * self.scale_factor))
 
         self.lbl_header.setStyleSheet(
             f"color: #FFD700; font-weight: bold; font-size: {header_size}px;"
@@ -156,8 +156,8 @@ class Overlay(QtWidgets.QWidget):
             f"color: #DDDDDD; font-size: {comment_size}px; font-style: italic;"
         )
 
-        # Ridimensiona finestra
-        self.resize(int(320 * self.scale_factor), int(200 * self.scale_factor))
+        # Ridimensiona finestra (base più grande per leggibilità)
+        self.resize(int(380 * self.scale_factor), int(240 * self.scale_factor))
 
     def set_action_style(self, color: str, base_size: int = 24):
         size = int(base_size * self.scale_factor)
