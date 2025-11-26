@@ -143,19 +143,25 @@ async def analyze_screenshot(file: UploadFile = File(...)) -> Dict[str, Any]:
         # Inizializza Vision AI
         vision_ai = PokerVisionAI()
         
-        # Analisi
-        logger.info("🧠 Analisi con Gemini Vision...")
-        result = await vision_ai.analyze_poker_table(str(temp_path), table_id=999)
-        
+        # Analisi Vision (lettura tavolo)
+        logger.info("🧠 Analisi con Gemini Vision (lettura stato tavolo)...")
+        vision_result = await vision_ai.analyze_poker_table(str(temp_path), table_id=999)
+
+        # Calcolo equity matematica + decisione HU (Fase 1)
+        math_result = _compute_math_equity_and_decision(vision_result)
+
         # --- AGGIORNAMENTO MEMORIA PER OVERLAY ---
-        SharedState.update(result)
-        logger.info(f"✅ Analisi completata e salvata per Overlay: {result.get('recommended_action')}")
+        SharedState.update(math_result)
+        logger.info(
+            "✅ Analisi completata (math-driven) e salvata per Overlay: %s",
+            math_result.get("recommended_action"),
+        )
         # -----------------------------------------
-        
+
         return {
             "status": "success",
             "message": "Analisi completata",
-            "analysis": result
+            "analysis": math_result,
         }
         
     except Exception as e:
