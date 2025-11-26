@@ -13,3 +13,7 @@ emergentintegrations
 treys
 deuces
 numpy
+# Librerie per Client Desktop (Windows)
+mss
+pygetwindow
+PyQt5
