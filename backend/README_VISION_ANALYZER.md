@@ -8,7 +8,7 @@ Sistema **separato e pulito** per analizzare screenshot poker manualmente con Ge
 
 ### URL Principale:
 ```
-https://poker-assistant-2.preview.emergentagent.com/vision
+https://table-analyzer.preview.emergentagent.com/vision
 ```
 
 ---
@@ -25,7 +25,7 @@ https://poker-assistant-2.preview.emergentagent.com/vision
 
 ### 3. **Apri Vision Analyzer**
 ```
-Safari → https://poker-assistant-2.preview.emergentagent.com/vision
+Safari → https://table-analyzer.preview.emergentagent.com/vision
 ```
 
 ### 4. **Carica e Analizza**
@@ -163,7 +163,7 @@ Per sistema **automatico real-time** serve il client PC.
 
 Vai su iPhone e apri:
 ```
-https://poker-assistant-2.preview.emergentagent.com/vision
+https://table-analyzer.preview.emergentagent.com/vision
 ```
 
 Buon divertimento! 🎴🤖

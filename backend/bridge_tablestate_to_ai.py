@@ -20,7 +20,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 
-API_URL = "https://ee995408-c4e3-44e3-8067-f634e9d33e68.preview.emergentagent.com/api"
+API_URL = "https://table-analyzer.preview.emergentagent.com/api"
 
 
 def get_recognized_cards() -> Dict[str, Any]:
