@@ -6,6 +6,8 @@ import sys
 import time
 import requests
 from PyQt5 import QtWidgets, QtCore, QtGui
+from screenshot_client import PokerClient
+
 
 API_URL = "http://localhost:8001/api"
 
@@ -19,6 +21,8 @@ class Overlay(QtWidgets.QWidget):
             QtCore.Qt.Tool
         )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.client: PokerClient | None = None
+
         
         self.initUI()
         
