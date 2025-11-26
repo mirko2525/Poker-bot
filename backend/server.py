@@ -2,7 +2,6 @@ from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
@@ -12,23 +11,57 @@ import uuid
 from datetime import datetime, timezone
 import random
 import asyncio
-
 import cv2
-from card_recognition_fullcard import FullCardRecognizer
-from card_recognition_hero_back import HeroBackRecognizer
-from pokerstars_layout_real import (
-    PokerStarsLayout2048x1279,
-    recognize_table_cards_pokerstars,
-)
 
+# --- MONGODB SETUP (OPZIONALE) ---
+# Gestiamo il caso in cui Motor o MongoDB non siano disponibili
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient
+    MOTOR_AVAILABLE = True
+except ImportError:
+    MOTOR_AVAILABLE = False
+    print("⚠️ Libreria 'motor' non trovata. Modalità senza Database (In-Memory).")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Configurazione DB
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+db_name = os.environ.get('DB_NAME', 'poker_db')
+
+class MockDB:
+    """Database finto in memoria per quando MongoDB non c'è."""
+    def __init__(self):
+        self.status_checks = MockCollection()
+
+class MockCollection:
+    def __init__(self):
+        self.data = []
+    async def insert_one(self, doc):
+        self.data.append(doc)
+        return True
+    def find(self, query, projection=None):
+        return self
+    async def to_list(self, length):
+        return self.data[-length:]
+
+# Inizializzazione Client DB
+client = None
+db = None
+
+if MOTOR_AVAILABLE:
+    try:
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=2000)
+        db = client[db_name]
+        print(f"✅ MongoDB configurato: {mongo_url}")
+    except Exception as e:
+        print(f"⚠️ Errore connessione MongoDB: {e}")
+        print("   Passaggio a modalità In-Memory.")
+        db = MockDB()
+else:
+    db = MockDB()
+
+# --- FINE SETUP DB ---
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -126,506 +159,27 @@ class LiveAnalysisResponse(BaseModel):
     ai_comment: str = Field(..., description="Spiegazione AI in italiano")
 
 
-def build_table_cards_response(table_id: str) -> "TableCardsResponse":
-    """Costruisce la risposta TableCardsResponse a partire da TABLE_STATE."""
-    state = TABLE_STATE
-    result = state.get("result") or {}
-    error = state.get("error")
-    updated_at = state.get("updated_at")
-
-    if result and not error:
-        status = "ok"
-    elif not result and error:
-        if "not found" in str(error).lower():
-            status = "no_image"
-        else:
-            status = "error"
-    else:
-        status = "pending"
-
-    hero_raw = result.get("hero", [])
-    board_raw = result.get("board", [])
-
-    hero_cards: List[RecognizedCard] = []
-    for card in hero_raw:
-        bbox_val = card.get("bbox")
-        hero_cards.append(
-            RecognizedCard(
-                code=card.get("code"),
-                score=float(card.get("score", 0.0)),
-                conf=str(card.get("conf", "none")),
-                bbox=tuple(bbox_val) if bbox_val is not None else None,
-            )
-        )
-
-    board_cards: List[RecognizedCard] = []
-    for card in board_raw:
-        bbox_val = card.get("bbox")
-        board_cards.append(
-            RecognizedCard(
-                code=card.get("code"),
-                score=float(card.get("score", 0.0)),
-                conf=str(card.get("conf", "none")),
-                bbox=tuple(bbox_val) if bbox_val is not None else None,
-            )
-        )
-
-    return TableCardsResponse(
-        table_id=table_id,
-        image_path=str(TABLE_SCREEN_PATH),
-        debug_image_path=str(TABLE_DEBUG_PATH),
-        updated_at=updated_at,
-        status=status,
-        hero=hero_cards,
-        board=board_cards,
-        error=error,
-    )
-
-
-from equity_engine import compute_equity_stub
-
-
-def get_current_cards_for_equity() -> tuple[list[str], list[str], str, str]:
-    """Estrae hero/board "usabili" da TABLE_STATE per il calcolo equity.
-
-    Ritorna (hero_cards, board_cards, status, error_msg)
-    status: ok | missing_cards | error
-    """
-    state = TABLE_STATE
-    result = state.get("result") or {}
-    error = state.get("error")
-
-    if error:
-        return [], [], "error", str(error)
-
-    hero_raw = result.get("hero", [])
-    board_raw = result.get("board", [])
-
-    hero_cards = [
-        c.get("code")
-        for c in hero_raw
-        if c.get("code") and c.get("conf") == "strong"
-    ]
-    board_cards = [
-        c.get("code")
-        for c in board_raw
-        if c.get("code") and c.get("conf") == "strong"
-    ]
-
-    if len(hero_cards) < 2:
-        return hero_cards, board_cards, "missing_cards", "Not enough hero cards"
-
-    return hero_cards, board_cards, "ok", ""
-
-
-# Original Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-
-# Poker Bot Logic - Mock Implementations
-class MockStateProvider:
-    def __init__(self):
-        # Espansione a 8 mani per coprire scenari diversificati (Ordini Fase 2)
-        # Mani organizzate in sequenza logica per creare una "storia di test"
-        self.mock_hands = [
-            # 1. Strong PREFLOP (AA) - Small pot, low to_call
-            {
-                "hero_cards": ["As", "Ad"],
-                "board_cards": [],
-                "hero_stack": 100.0,
-                "pot_size": 3.0,
-                "to_call": 2.0,
-                "big_blind": 1.0,
-                "players_in_hand": 3,
-                "phase": "PREFLOP"
-            },
-            # 2. Marginal PREFLOP (KJo) - Large raise to call
-            {
-                "hero_cards": ["Kh", "Jd"],
-                "board_cards": [],
-                "hero_stack": 98.0,
-                "pot_size": 12.0,
-                "to_call": 8.0,
-                "big_blind": 1.0,
-                "players_in_hand": 4,
-                "phase": "PREFLOP"
-            },
-            # 3. FLOP - Top pair top kicker, small pot
-            {
-                "hero_cards": ["Ah", "Ks"],
-                "board_cards": ["Ad", "7c", "2s"],
-                "hero_stack": 90.0,
-                "pot_size": 15.0,
-                "to_call": 3.0,
-                "big_blind": 1.0,
-                "players_in_hand": 3,
-                "phase": "FLOP"
-            },
-            # 4. FLOP - Flush draw with interesting pot odds
-            {
-                "hero_cards": ["9h", "8h"],
-                "board_cards": ["7h", "5h", "2c"],
-                "hero_stack": 87.0,
-                "pot_size": 20.0,
-                "to_call": 5.0,
-                "big_blind": 1.0,
-                "players_in_hand": 2,
-                "phase": "FLOP"
-            },
-            # 5. TURN - Completed straight draw, medium pot
-            {
-                "hero_cards": ["Qh", "Jd"],
-                "board_cards": ["Kc", "Ts", "9h", "4d"],
-                "hero_stack": 82.0,
-                "pot_size": 30.0,
-                "to_call": 10.0,
-                "big_blind": 1.0,
-                "players_in_hand": 2,
-                "phase": "TURN"
-            },
-            # 6. RIVER - Weak hand, big pot, large to_call
-            {
-                "hero_cards": ["2h", "7c"],
-                "board_cards": ["Ac", "Kd", "Qh", "Js", "5s"],
-                "hero_stack": 72.0,
-                "pot_size": 60.0,
-                "to_call": 25.0,
-                "big_blind": 1.0,
-                "players_in_hand": 2,
-                "phase": "RIVER"
-            },
-            # 7. Short stack situation (<10 BB) with good equity -> all-in testing
-            {
-                "hero_cards": ["Jh", "Jc"],
-                "board_cards": [],
-                "hero_stack": 8.5,
-                "pot_size": 4.5,
-                "to_call": 3.5,
-                "big_blind": 1.0,
-                "players_in_hand": 4,
-                "phase": "PREFLOP"
-            },
-            # 8. Borderline situation where equity ≈ pot odds -> CALL/FOLD logic testing
-            {
-                "hero_cards": ["Tc", "9c"],
-                "board_cards": ["8h", "7d", "2s"],
-                "hero_stack": 47.0,
-                "pot_size": 24.0,
-                "to_call": 8.0,
-                "big_blind": 1.0,
-                "players_in_hand": 3,
-                "phase": "FLOP"
-            }
-        ]
-        self.current_index = 0
-    
-    def get_next_mock_hand(self):
-        if self.current_index >= len(self.mock_hands):
-            return None
-        
-        hand = self.mock_hands[self.current_index]
-        self.current_index += 1
-        return HandState(**hand)
-    
-    def reset_mock_hands(self):
-        self.current_index = 0
-    
-    def has_next(self):
-        return self.current_index < len(self.mock_hands)
-
-
-class MockEquityEngine:
-    def __init__(self, enable_random: bool = True):
-        # Controllo randomness (Ordini Fase 2)
-        self.enable_random = enable_random
-        
-        # Preflop equity table (simplified) - values in percentage
-        # These represent equity vs random hand heads-up
-        self.preflop_equity = {
-            # Premium pairs
-            "AA": 85, "KK": 82, "QQ": 80, "JJ": 77, "TT": 75,
-            # Strong broadway
-            "AK": 67, "AQ": 65, "AJ": 63, "AT": 60,
-            "KQ": 63, "KJ": 60, "QJ": 58, "JT": 56,
-            # Weak aces and kings
-            "A9": 58, "A8": 57, "A7": 56, "A6": 55, "A5": 55,
-            "A4": 54, "A3": 54, "A2": 53,
-            "K9": 55, "K8": 54, "K7": 53, "K6": 52, "K5": 51,
-            "K4": 50, "K3": 49, "K2": 48,
-            "Q9": 52, "Q8": 51, "Q7": 50, "Q6": 49, "Q5": 48,
-            "Q4": 47, "Q3": 46, "Q2": 45,
-            "J9": 50, "J8": 49, "J7": 48, "J6": 47, "J5": 46,
-            "J4": 45, "J3": 44, "J2": 43,
-            "T9": 54, "T8": 53, "T7": 51, "T6": 49, "T5": 48,
-            "T4": 47, "T3": 46, "T2": 45,
-            # Pairs
-            "22": 50, "33": 52, "44": 54, "55": 56, "66": 58,
-            "77": 60, "88": 63, "99": 65,
-            # Connectors and suited combos
-            "98": 52, "87": 50, "76": 49, "65": 48, "54": 46,
-            "97": 48, "86": 47, "75": 46, "64": 44, "53": 43,
-            "96": 46, "85": 45, "74": 43, "63": 42, "52": 40,
-            "95": 44, "84": 43, "73": 41, "62": 39, "42": 37,
-            "94": 42, "83": 41, "72": 38, "32": 36,
-            "93": 40, "82": 39, "92": 38, "43": 39
-        }
-    
-    def compute_equity(self, hand_state: HandState) -> float:
-        # Check if hero cards are unknown/unrecognized
-        if not hand_state.hero_cards or any('?' in card for card in hand_state.hero_cards):
-            # Return default equity for unknown hands (in decimal 0-1 range)
-            return 0.50  # 50% default equity
-        
-        if hand_state.phase == "PREFLOP":
-            return self._compute_preflop_equity(hand_state.hero_cards)
-        else:
-            return self._compute_postflop_equity(hand_state)
-    
-    def _compute_preflop_equity(self, hero_cards: List[str]) -> float:
-        # Extract hand strength key
-        card1_rank = hero_cards[0][0]
-        card2_rank = hero_cards[1][0]
-        
-        # Convert face cards
-        rank_values: Dict[str, int] = {"A": 14, "K": 13, "Q": 12, "J": 11, "T": 10}
-        
-        for rank in [card1_rank, card2_rank]:
-            if rank.isdigit():
-                rank_values[rank] = int(rank)
-        
-        # Determine hand type
-        if card1_rank == card2_rank:
-            # Pocket pair
-            hand_key = card1_rank + card2_rank
-        else:
-            # High card combination
-            high_card = max(card1_rank, card2_rank, key=lambda x: rank_values.get(x, int(x) if x.isdigit() else 0))
-            low_card = min(card1_rank, card2_rank, key=lambda x: rank_values.get(x, int(x) if x.isdigit() else 0))
-            hand_key = high_card + low_card
-        
-        equity = self.preflop_equity.get(hand_key, 45)  # Default equity
-        
-        # Add randomness only if enabled (Ordini Fase 2)
-        if self.enable_random:
-            equity += random.uniform(-5, 5)
-        
-        # Convert to decimal 0-1 range (was percentage 0-100)
-        equity_decimal = max(0.10, min(0.95, equity / 100.0))
-        return equity_decimal
-    
-    def _compute_postflop_equity(self, hand_state: HandState) -> float:
-        """Compute postflop equity based on hand strength and board texture.
-
-        Returns value in decimal range 0-1 (not percentage).
-        """
-        # Start with preflop equity as base (already in decimal 0-1)
-        base_equity_decimal = self._compute_preflop_equity(hand_state.hero_cards)
-        
-        # Convert to percentage for easier manipulation
-        equity_pct = base_equity_decimal * 100.0
-        
-        # Analyze board interaction
-        board_cards = hand_state.board_cards
-        hero_ranks = [card[0] for card in hand_state.hero_cards]
-        board_ranks = [card[0] for card in board_cards]
-        
-        # Check for pairs, trips with board (simplified)
-        hero_on_board = len(set(hero_ranks) & set(board_ranks))
-        
-        if hero_on_board == 2:
-            # Both hero cards on board (two pair or better)
-            equity_pct = min(95, equity_pct + 15)
-        elif hero_on_board == 1:
-            # One hero card on board (pair)
-            equity_pct = min(90, equity_pct + 8)
-        elif hero_on_board == 0:
-            # No pair - reduce equity significantly for weak hands
-            # Strong pocket pairs maintain better equity even without hitting
-            if equity_pct >= 75:  # Premium pairs (TT+)
-                equity_pct = max(60, equity_pct - 10)
-            elif equity_pct >= 60:  # Medium pairs/hands
-                equity_pct = max(40, equity_pct - 15)
-            else:  # Weak hands
-                equity_pct = max(5, equity_pct - 25)
-        
-        # Adjust for phase (equity typically decreases as unknowns decrease)
-        # But for strong hands, equity often holds or increases
-        if hand_state.phase == "RIVER":
-            # On river, equity is more certain
-            # Strong hands stay strong, weak hands stay weak
-            pass  # No adjustment
-        elif hand_state.phase == "TURN":
-            # On turn, small variance
-            if self.enable_random:
-                equity_pct += random.uniform(-3, 3)
-        else:  # FLOP
-            # On flop, more variance
-            if self.enable_random:
-                equity_pct += random.uniform(-5, 5)
-        
-        # Clamp and convert back to decimal
-        equity_pct = max(5, min(95, equity_pct))
-        return equity_pct / 100.0
-
-
-class DecisionEngine:
-    def __init__(self):
-        # Costanti configurabili (Ordini Fase 2)
-        # Importiamo le costanti dal file di configurazione
-        from poker_config import (
-            MARGIN,
-            STRONG_EQUITY_THRESHOLD,
-            ALLIN_STACK_BB_THRESHOLD,
-            SHORT_STACK_BORDERLINE_BB,
-            HIGH_EQUITY_FOR_ALLIN,
-            RAISE_POT_MULTIPLIER,
-            RAISE_NO_COST_MULTIPLIER,
-        )
-        
-        self.margin = MARGIN
-        self.strong_equity_threshold = STRONG_EQUITY_THRESHOLD  
-        self.allin_stack_bb_threshold = ALLIN_STACK_BB_THRESHOLD
-        self.short_stack_borderline_bb = SHORT_STACK_BORDERLINE_BB
-        self.high_equity_for_allin = HIGH_EQUITY_FOR_ALLIN
-        self.raise_pot_multiplier = RAISE_POT_MULTIPLIER
-        self.raise_no_cost_multiplier = RAISE_NO_COST_MULTIPLIER
-    
-    def decide_action(self, hand_state: HandState, equity: float) -> Decision:
-        """Decide poker action based on hand state and equity.
-
-        Args:
-            hand_state: Current hand state
-            equity: Equity as decimal (0-1 range, NOT percentage)
-
-        Returns:
-            Decision object with action, raise_amount, and reason
-        """
-        # equity is already in decimal format (0-1), no need to divide by 100
-        equity_fraction = equity
-        
-        if hand_state.to_call == 0:
-            return self._decide_no_cost_to_call(hand_state, equity, equity_fraction)
-        else:
-            return self._decide_cost_to_call(hand_state, equity, equity_fraction)
-    
-    def _decide_no_cost_to_call(self, hand_state: HandState, equity: float, equity_fraction: float) -> Decision:
-        if equity_fraction < 0.15:
-            return Decision(
-                action="CALL",
-                raise_amount=0.0,
-                reason="Weak hand, but no cost to see next card",
-                equity=equity,
-            )
-        elif equity_fraction < 0.5:
-            return Decision(
-                action="CALL",
-                raise_amount=0.0,
-                reason="Decent hand, check to see next card",
-                equity=equity,
-            )
-        else:
-            raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_no_cost_multiplier)
-            return Decision(
-                action="RAISE",
-                raise_amount=raise_amount,
-                reason="Strong hand, small raise for value",
-                equity=equity,
-            )
-    
-    def _decide_cost_to_call(self, hand_state: HandState, equity: float, equity_fraction: float) -> Decision:
-        pot_odds = hand_state.to_call / (hand_state.pot_size + hand_state.to_call)
-        hero_stack_bb = hand_state.hero_stack / hand_state.big_blind
-        
-        # Check for short stack all-in situation
-        if hero_stack_bb < self.allin_stack_bb_threshold and equity_fraction > self.high_equity_for_allin:
-            return Decision(
-                action="RAISE",
-                raise_amount=hand_state.hero_stack,
-                reason=f"Short stack ({hero_stack_bb:.1f} BB) with strong equity - all-in",
-                equity=equity,
-                pot_odds=pot_odds * 100,
-            )
-        
-        # Compare equity vs pot odds
-        if equity_fraction < pot_odds - self.margin:
-            return Decision(
-                action="FOLD",
-                raise_amount=0.0,
-                reason=f"Equity ({equity*100:.1f}%) insufficient vs pot odds ({pot_odds*100:.1f}%)",
-                equity=equity,
-                pot_odds=pot_odds * 100,
-            )
-        
-        elif equity_fraction <= pot_odds + self.margin:
-            # Borderline situation
-            if hero_stack_bb > self.short_stack_borderline_bb:
-                return Decision(
-                    action="CALL",
-                    raise_amount=0.0,
-                    reason=f"Borderline spot with decent stack ({hero_stack_bb:.1f} BB) - call",
-                    equity=equity,
-                    pot_odds=pot_odds * 100,
-                )
-            else:
-                return Decision(
-                    action="FOLD",
-                    raise_amount=0.0,
-                    reason=f"Borderline spot with short stack ({hero_stack_bb:.1f} BB) - fold",
-                    equity=equity,
-                    pot_odds=pot_odds * 100,
-                )
-        
-        else:
-            # Positive situation
-            if equity_fraction < self.strong_equity_threshold:
-                return Decision(
-                    action="CALL",
-                    raise_amount=0.0,
-                    reason=f"Good equity ({equity*100:.1f}%) vs pot odds ({pot_odds*100:.1f}%) - call",
-                    equity=equity,
-                    pot_odds=pot_odds * 100,
-                )
-            else:
-                raise_amount = min(hand_state.hero_stack, hand_state.pot_size * self.raise_pot_multiplier)
-                return Decision(
-                    action="RAISE",
-                    raise_amount=raise_amount,
-                    reason=f"Strong equity ({equity*100:.1f}%) - raise for value",
-                    equity=equity,
-                    pot_odds=pot_odds * 100,
-                )
-
-
-# Initialize the poker bot components (Fase 2: Sincronizzazione parametri)
-mock_state_provider = MockStateProvider()
-equity_engine = MockEquityEngine(enable_random=True)  # Randomness per web demo
-decision_engine = DecisionEngine()
-
-# Initialize AI Advisor (Groq Cloud integration)
-from poker_ai_advisor import PokerAIAdvisor
-try:
-    ai_advisor = PokerAIAdvisor()
-    print("✅ Groq AI Advisor initialized successfully")
-except Exception as e:
-    print(f"⚠️ AI Advisor initialization failed: {e}. Will continue without AI analysis.")
-    ai_advisor = None
-
 # Initialize table recognition components (Fase tavolo reale)
 TABLE_SCREEN_PATH = ROOT_DIR / "data" / "screens" / "table1.png"
 TABLE_DEBUG_PATH = ROOT_DIR / "data" / "screens" / "table1_debug.png"
-TABLE_LAYOUT = PokerStarsLayout2048x1279()
-CARD_RECOGNIZER = FullCardRecognizer()
-HERO_BACK_TEMPLATES_DIR = ROOT_DIR / "card_templates" / "pokerstars" / "hero_back"
-HERO_BACK_RECOGNIZER = HeroBackRecognizer(HERO_BACK_TEMPLATES_DIR)
+
+# Importazioni condizionali per evitare crash se mancano librerie
+try:
+    from card_recognition_fullcard import FullCardRecognizer
+    from card_recognition_hero_back import HeroBackRecognizer
+    from pokerstars_layout_real import (
+        PokerStarsLayout2048x1279,
+        recognize_table_cards_pokerstars,
+    )
+    RECOGNITION_AVAILABLE = True
+    TABLE_LAYOUT = PokerStarsLayout2048x1279()
+    CARD_RECOGNIZER = FullCardRecognizer()
+    HERO_BACK_TEMPLATES_DIR = ROOT_DIR / "card_templates" / "pokerstars" / "hero_back"
+    HERO_BACK_RECOGNIZER = HeroBackRecognizer(HERO_BACK_TEMPLATES_DIR)
+except ImportError as e:
+    print(f"⚠️ Moduli riconoscimento non disponibili: {e}")
+    RECOGNITION_AVAILABLE = False
+
 
 # In-memory state for last recognized table
 TABLE_STATE: Dict[str, Any] = {
@@ -696,14 +250,13 @@ def save_table_debug_overlay(screen_bgr, recognition: Dict[str, Any], out_path: 
 
 
 async def update_table_cards_once() -> None:
-    """Legge lo screenshot del tavolo e aggiorna TABLE_STATE.
+    """Legge lo screenshot del tavolo e aggiorna TABLE_STATE."""
+    if not RECOGNITION_AVAILABLE:
+        return
 
-    Usa le coordinate reali PokerStars (2048×1279) e il FullCardRecognizer
-    per riconoscere le 7 carte (2 hero + 5 board).
-    """
     if not TABLE_SCREEN_PATH.exists():
         msg = f"Screenshot file not found: {TABLE_SCREEN_PATH}"
-        logger.warning(msg)
+        # logger.warning(msg) # Rimosso per ridurre log
         TABLE_STATE["result"] = None
         TABLE_STATE["error"] = msg
         TABLE_STATE["updated_at"] = None
@@ -763,54 +316,65 @@ async def update_table_cards_once() -> None:
         TABLE_STATE["error"] = str(exc)
 
 
-@api_router.get("/table/{table_id}/equity", response_model=TableEquityResponse)
-async def get_table_equity(table_id: str, num_players: int = 2) -> TableEquityResponse:
-    """Ritorna equity stub basata sulle carte riconosciute forti.
+def build_table_cards_response(table_id: str) -> "TableCardsResponse":
+    """Costruisce la risposta TableCardsResponse a partire da TABLE_STATE."""
+    state = TABLE_STATE
+    result = state.get("result") or {}
+    error = state.get("error")
+    updated_at = state.get("updated_at")
 
-    Usa solo le carte con conf == "strong" da hero + board.
-    """
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
+    if result and not error:
+        status = "ok"
+    elif not result and error:
+        if "not found" in str(error).lower():
+            status = "no_image"
+        else:
+            status = "error"
+    else:
+        status = "pending"
 
-    hero_cards, board_cards, status, err = get_current_cards_for_equity()
+    hero_raw = result.get("hero", [])
+    board_raw = result.get("board", [])
 
-    if status != "ok":
-        return TableEquityResponse(
-            table_id=table_id,
-            num_players=num_players,
-            hero_cards=hero_cards,
-            board_cards=board_cards,
-            status=status,
-            hero_win=0.0,
-            hero_tie=0.0,
-            hero_lose=0.0,
-            error=err or None,
+    hero_cards: List[RecognizedCard] = []
+    for card in hero_raw:
+        bbox_val = card.get("bbox")
+        hero_cards.append(
+            RecognizedCard(
+                code=card.get("code"),
+                score=float(card.get("score", 0.0)),
+                conf=str(card.get("conf", "none")),
+                bbox=tuple(bbox_val) if bbox_val is not None else None,
+            )
         )
 
-    eq = compute_equity_stub(hero_cards, board_cards, num_players)
+    board_cards: List[RecognizedCard] = []
+    for card in board_raw:
+        bbox_val = card.get("bbox")
+        board_cards.append(
+            RecognizedCard(
+                code=card.get("code"),
+                score=float(card.get("score", 0.0)),
+                conf=str(card.get("conf", "none")),
+                bbox=tuple(bbox_val) if bbox_val is not None else None,
+            )
+        )
 
-    return TableEquityResponse(
+    return TableCardsResponse(
         table_id=table_id,
-        num_players=num_players,
-        hero_cards=hero_cards,
-        board_cards=board_cards,
-        status="ok",
-        hero_win=eq.get("win", 0.0),
-        hero_tie=eq.get("tie", 0.0),
-        hero_lose=eq.get("lose", 0.0),
-        error=None,
+        image_path=str(TABLE_SCREEN_PATH),
+        debug_image_path=str(TABLE_DEBUG_PATH),
+        updated_at=updated_at,
+        status=status,
+        hero=hero_cards,
+        board=board_cards,
+        error=error,
     )
 
 
 @api_router.post("/table/{table_id}/screenshot", response_model=TableCardsResponse)
 async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)) -> TableCardsResponse:
-    """Carica uno screenshot tavolo, aggiorna il riconoscimento e ritorna le carte.
-
-    Flusso:
-    - Salva il file caricato come table1.png sotto data/screens
-    - Chiama subito update_table_cards_once()
-    - Ritorna la risposta TableCardsResponse aggiornata
-    """
+    """Carica uno screenshot tavolo, aggiorna il riconoscimento e ritorna le carte."""
     if table_id != "1":
         raise HTTPException(status_code=404, detail="Unknown table_id")
 
@@ -829,6 +393,21 @@ async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)) -
     return build_table_cards_response(table_id)
 
 
+@api_router.post("/table/{table_id}/upload")
+async def upload_table_screenshot_simple(table_id: str, file: UploadFile = File(...)):
+    """Endpoint semplificato per upload da client desktop."""
+    return await upload_table_screenshot(table_id, file)
+
+
+@api_router.get("/table/{table_id}/cards", response_model=TableCardsResponse)
+async def get_table_cards(table_id: str) -> TableCardsResponse:
+    """Ritorna le 7 carte riconosciute per il tavolo specificato (stato corrente)."""
+    if table_id != "1":
+        raise HTTPException(status_code=404, detail="Unknown table_id")
+
+    return build_table_cards_response(table_id)
+
+
 async def table_cards_watcher() -> None:
     """Loop che aggiorna le carte del tavolo ogni 5 secondi."""
     while True:
@@ -836,66 +415,14 @@ async def table_cards_watcher() -> None:
         await asyncio.sleep(5)
 
 
-# Add poker bot routes
-@api_router.get("/poker/demo/start")
-async def start_demo():
-    """Reset demo and get first hand"""
-    mock_state_provider.reset_mock_hands()
-    return {"message": "Demo started", "total_hands": len(mock_state_provider.mock_hands)}
-
-
-@api_router.get("/poker/demo/next", response_model=DemoResponse)
-async def get_next_hand():
-    """Get next demo hand with analysis"""
-    hand_state = mock_state_provider.get_next_mock_hand()
-    
-    if hand_state is None:
-        raise HTTPException(status_code=404, detail="No more demo hands available")
-    
-    # Compute equity
-    equity = equity_engine.compute_equity(hand_state)
-    
-    # Make decision
-    decision = decision_engine.decide_action(hand_state, equity)
-    
-    # Add AI analysis if advisor is available
-    if ai_advisor:
-        try:
-            ai_analysis = ai_advisor.analyze_hand(
-                hero_cards=hand_state.hero_cards,
-                board_cards=hand_state.board_cards,
-                pot_size=hand_state.pot_size,
-                to_call=hand_state.to_call,
-                hero_stack=hand_state.hero_stack,
-                big_blind=hand_state.big_blind,
-                players_in_hand=hand_state.players_in_hand,
-                phase=hand_state.phase,
-                equity=equity * 100,  # Convert to percentage for display
-                suggested_action=decision.action,
-                raise_amount=decision.raise_amount
-            )
-            decision.ai_analysis = ai_analysis
-            logger.info(f"✅ AI analysis generated for hand {mock_state_provider.current_index}")
-        except Exception as e:
-            logger.error(f"❌ Failed to generate AI analysis: {e}")
-            decision.ai_analysis = None
-    
-    return DemoResponse(
-        hand_number=mock_state_provider.current_index,
-        hand_state=hand_state,
-        decision=decision,
-        has_next=mock_state_provider.has_next(),
-    )
-
-
-@api_router.get("/poker/demo/status")
-async def get_demo_status():
-    """Get current demo status"""
-    return {
-        "current_hand": mock_state_provider.current_index,
-        "total_hands": len(mock_state_provider.mock_hands),
-        "has_next": mock_state_provider.has_next(),
-    }
+# Initialize AI Advisor (Groq Cloud integration)
+from poker_ai_advisor import PokerAIAdvisor
+try:
+    ai_advisor = PokerAIAdvisor()
+    print("✅ Groq AI Advisor initialized successfully")
+except Exception as e:
+    print(f"⚠️ AI Advisor initialization failed: {e}. Will continue without AI analysis.")
+    ai_advisor = None
 
 
 # NEW: Live Analyze Endpoint - Il "cervello" del sistema
@@ -903,17 +430,6 @@ async def get_demo_status():
 async def live_analyze(table_state: LiveTableState):
     """
     🧠 ENDPOINT PRINCIPALE - Live Poker Analysis
-    
-    Riceve lo stato del tavolo (screenshot → JSON) e ritorna:
-    - Azione consigliata (FOLD/CALL/RAISE)
-    - Importo raise
-    - Stima equity
-    - Livello confidenza
-    - Commento AI in italiano
-    
-    Questo endpoint sostituisce il vecchio flusso:
-    - Vecchio: screenshot → equity_engine → decision_engine → (forse) AI
-    - Nuovo: screenshot → stato JSON → AI Groq (fa tutto) → overlay
     """
     if not ai_advisor:
         raise HTTPException(
@@ -955,167 +471,42 @@ async def live_analyze(table_state: LiveTableState):
         )
 
 
-@api_router.get("/table/{table_id}/cards", response_model=TableCardsResponse)
-async def get_table_cards(table_id: str) -> TableCardsResponse:
-    """Ritorna le 7 carte riconosciute per il tavolo specificato (stato corrente)."""
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
-
-    return build_table_cards_response(table_id)
-
-
-@api_router.get("/table/{table_id}/screenshot")
-async def get_table_screenshot(table_id: str, debug: bool = False):
-    """
-    Visualizza lo screenshot del tavolo.
-    
-    Args:
-        table_id: ID tavolo
-        debug: Se True, mostra la versione con box di riconoscimento
-    """
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
-    
-    screens_dir = ROOT_DIR / "data" / "screens"
-    
-    if debug:
-        screenshot_path = screens_dir / f"table{table_id}_debug.png"
-    else:
-        screenshot_path = screens_dir / f"table{table_id}.png"
-    
-    if not screenshot_path.exists():
-        raise HTTPException(status_code=404, detail="Screenshot not found")
-    
-    return FileResponse(screenshot_path, media_type="image/png")
-
-
-@api_router.get("/table/{table_id}/cards/images")
-async def get_extracted_cards(table_id: str):
-    """
-    Mostra le singole carte estratte dallo screenshot.
-    Utile per debug del riconoscimento.
-    """
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
-    
-    screens_dir = ROOT_DIR / "data" / "screens"
-    
-    # Lista tutti i file hero_*.png e board_*.png
-    hero_files = sorted(screens_dir.glob("hero_*.png"))
-    board_files = sorted(screens_dir.glob("board_*.png"))
-    
-    files = {
-        "hero": [str(f.name) for f in hero_files],
-        "board": [str(f.name) for f in board_files]
-    }
-    
-    return files
-
-
-@api_router.get("/table/{table_id}/cards/image/{card_name}")
-async def get_single_card_image(table_id: str, card_name: str):
-    """Visualizza una singola carta estratta (es: hero_1.png)"""
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
-    
-    screens_dir = ROOT_DIR / "data" / "screens"
-    card_path = screens_dir / card_name
-    
-    if not card_path.exists():
-        raise HTTPException(status_code=404, detail="Card image not found")
-    
-    return FileResponse(card_path, media_type="image/png")
-
-
-@api_router.post("/table/{table_id}/upload")
-async def upload_table_screenshot(table_id: str, file: UploadFile = File(...)):
-    """
-    Upload screenshot del tavolo poker per riconoscimento automatico.
-    
-    Il client desktop invia screenshot ogni 3 secondi.
-    Il backend salva l'immagine e triggera il riconoscimento carte.
-    
-    Args:
-        table_id: ID del tavolo (es. "1")
-        file: Immagine PNG/JPG dello screenshot
-    
-    Returns:
-        Status dell'upload e risultato riconoscimento
-    """
-    if table_id != "1":
-        raise HTTPException(status_code=404, detail="Unknown table_id")
-    
-    try:
-        # Leggi il file
-        contents = await file.read()
-        
-        # Salva in /app/backend/data/screens/table{table_id}.png
-        screens_dir = ROOT_DIR / "data" / "screens"
-        screens_dir.mkdir(parents=True, exist_ok=True)
-        
-        screenshot_path = screens_dir / f"table{table_id}.png"
-        
-        with open(screenshot_path, "wb") as f:
-            f.write(contents)
-        
-        logger.info(f"✅ Screenshot salvato: {screenshot_path} ({len(contents)} bytes)")
-        
-        # Triggera riconoscimento carte
-        # Questo aggiorna TABLE_STATE con le nuove carte
-        await update_table_cards_once()
-        
-        # Ritorna stato riconoscimento
-        cards_response = build_table_cards_response(table_id)
-        
-        return {
-            "status": "success",
-            "message": f"Screenshot uploaded and processed ({len(contents)} bytes)",
-            "table_id": table_id,
-            "recognition": {
-                "status": cards_response.status,
-                "hero_cards": len(cards_response.hero),
-                "board_cards": len(cards_response.board),
-                "error": cards_response.error
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Errore upload screenshot: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Errore durante upload: {str(e)}"
-        )
-
-
 # Original routes
 @api_router.get("/")
 async def root():
     return {"message": "Poker Bot Demo API - Ready"}
 
 
+class StatusCheck(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    client_name: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class StatusCheckCreate(BaseModel):
+    client_name: str
+
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.model_dump()
     status_obj = StatusCheck(**status_dict)
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
     doc = status_obj.model_dump()
     doc['timestamp'] = doc['timestamp'].isoformat()
     
-    _ = await db.status_checks.insert_one(doc)
+    if db:
+        await db.status_checks.insert_one(doc)
     return status_obj
 
 
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
+    if not db:
+        return []
     status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
     for check in status_checks:
         if isinstance(check['timestamp'], str):
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
     return status_checks
 
 
@@ -1147,4 +538,5 @@ async def startup_event() -> None:
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if client:
+        client.close()
