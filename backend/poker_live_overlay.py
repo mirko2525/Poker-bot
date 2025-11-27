@@ -223,6 +223,13 @@ class Overlay(QtWidgets.QWidget):
         equity = float(data.get("equity_estimate", 0) or 0) * 100
         conf = float(data.get("confidence", 0) or 0) * 100
         comment = data.get("ai_comment", "")
+        hero_cards = data.get("hero_cards") or []
+        board_cards = data.get("board_cards") or []
+
+        # Mostra sempre le carte lette da Vision (debug + fiducia)
+        hero_str = " ".join(hero_cards) if hero_cards else "--"
+        board_str = " ".join(board_cards) if board_cards else "--"
+        self.lbl_cards.setText(f"Hero: {hero_str}    Board: {board_str}")
 
         action_text = action
         if action == "RAISE" and amount > 0:
