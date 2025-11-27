@@ -106,6 +106,11 @@ class Overlay(QtWidgets.QWidget):
         stats_layout.addWidget(self.lbl_equity)
         stats_layout.addWidget(self.lbl_conf)
 
+        # Info carte lette
+        self.lbl_cards = QtWidgets.QLabel("Hero: --  Board: --")
+        self.lbl_cards.setWordWrap(True)
+        self.lbl_cards.setAlignment(QtCore.Qt.AlignCenter)
+
         # Commento AI
         self.lbl_comment = QtWidgets.QLabel("Clicca 'Analizza ora' per iniziare l'analisi...")
         self.lbl_comment.setWordWrap(True)
@@ -116,6 +121,7 @@ class Overlay(QtWidgets.QWidget):
         in_layout.addLayout(controls_layout)
         in_layout.addWidget(self.lbl_action)
         in_layout.addLayout(stats_layout)
+        in_layout.addWidget(self.lbl_cards)
         in_layout.addWidget(self.lbl_comment)
 
         self.container.setLayout(in_layout)
