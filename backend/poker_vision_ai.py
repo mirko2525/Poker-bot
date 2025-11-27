@@ -112,14 +112,39 @@ class PokerVisionAI:
             return self._create_fallback_response(table_id)
     
     def _build_system_prompt(self) -> str:
-        return "Sei un esperto analista di poker. Rispondi SOLO con JSON valido. Analisi in italiano."
+        return (
+            "Sei un esperto analista di poker. "
+            "Devi leggere con MASSIMA PRECISIONE le carte dal tavolo. "
+            "Rispondi SOLO con JSON valido. Analisi in italiano."
+        )
     
     def _build_analysis_prompt(self) -> str:
         return """Analizza lo screenshot del tavolo poker.
-Identifica: hero_cards, board_cards, street, hero_stack, pot_size, to_call.
-Consiglia: recommended_action (FOLD/CALL/RAISE), recommended_amount, equity_estimate (0-1), confidence (0-1), ai_comment (italiano).
 
-Rispondi SOLO JSON:
+1. Identifica con precisione ASSOLUTA le carte di hero e del board.
+   - Usa ESCLUSIVAMENTE questi rank: ["2","3","4","5","6","7","8","9","T","J","Q","K","A"]
+   - Usa ESCLUSIVAMENTE questi semi: ["s","h","d","c"] (s = picche, h = cuori, d = quadri, c = fiori)
+   - Ogni carta deve essere nel formato "RankSuit", per esempio: "As", "Kd", "7h".
+
+2. EVITA ERRORI COMUNI:
+   - NON confondere il K (K) con il 7.
+   - NON confondere il 7 con il J.
+   - NON confondere l'Asso (A) con il 4.
+   - Se sei incerto tra due rank, scegli quello PIÙ COERENTE con le altre carte del tavolo.
+
+3. Campi da restituire nel JSON:
+   - hero_cards: array di 2 stringhe, es. ["As", "Kd"]
+   - board_cards: array di 0-5 stringhe, es. ["7h", "8h", "2c"]
+   - street: una di ["PREFLOP","FLOP","TURN","RIVER"]
+   - hero_stack: float (stack effettivo di hero in chips o bb)
+   - pot_size: float (piatto attuale)
+   - to_call: float (importo che hero deve mettere per continuare)
+
+4. Lascia all'esterno del modello il calcolo tecnico dell'equity e dell'azione.
+   - NON sei tu a decidere se foldare/callare/raisare.
+   - Puoi comunque fornire un commento strategico in italiano nel campo ai_comment.
+
+Rispondi SOLO JSON, ad esempio:
 {
   "hero_cards": ["As", "Kd"],
   "board_cards": ["7h", "8h", "2c"],
@@ -127,11 +152,7 @@ Rispondi SOLO JSON:
   "hero_stack": 95.0,
   "pot_size": 12.0,
   "to_call": 5.0,
-  "recommended_action": "FOLD",
-  "recommended_amount": 0.0,
-  "equity_estimate": 0.30,
-  "confidence": 0.80,
-  "ai_comment": "Commento strategico..."
+  "ai_comment": "Commento strategico in italiano..."
 }"""
 
     def _create_fallback_response(self, table_id: int) -> Dict[str, Any]:
